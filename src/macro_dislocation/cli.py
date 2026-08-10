@@ -9,6 +9,7 @@ from .baseline import run_baseline
 from .dukascopy import event_hours, write_quote_csv
 from .experiment import run_experiment
 from .phase0 import run_phase0
+from .verify import verify_phase0
 
 CONSENSUS_URL = "https://huggingface.co/datasets/Ehsanrs2/Forex_Factory_Calendar"
 
@@ -67,6 +68,18 @@ def _phase0(args: argparse.Namespace) -> None:
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def _verify_phase0(args: argparse.Namespace) -> None:
+    result = verify_phase0(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="macro-lab")
     commands = root.add_subparsers(required=True)
@@ -109,6 +122,13 @@ def parser() -> argparse.ArgumentParser:
     phase0.add_argument("--news-sources", default="config/news_sources.json")
     phase0.add_argument("--output-dir", default="artifacts/phase0_complete_2024")
     phase0.set_defaults(func=_phase0)
+
+    verify = commands.add_parser("verify-phase0")
+    verify.add_argument("--output-dir", default="artifacts/phase0_complete_2024")
+    verify.add_argument("--specification", default="config/phase0_trial_001.json")
+    verify.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify.add_argument("--project-root", default=".")
+    verify.set_defaults(func=_verify_phase0)
     return root
 
 

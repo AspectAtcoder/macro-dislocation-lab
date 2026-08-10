@@ -66,6 +66,9 @@ macro-lab experiment0
 # 6. 登録済み単一モデルを含むPhase 0最終判定
 macro-lab phase0-complete
 
+# 7. 入力ハッシュ・試行回数・成果物・判定の完了監査
+macro-lab verify-phase0
+
 # テスト
 python -m unittest discover -s tests -v
 ```
