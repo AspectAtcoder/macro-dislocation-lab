@@ -36,6 +36,19 @@ document vintageは76件のまま、各runの重複probeを含むobservationだ�
 [Phase 1 result](docs/PHASE1_RESULT.md)と
 [Phase 1 protocol](docs/PHASE1_PROTOCOL.md)を参照してください。
 
+## Phase 2 status
+
+Phase 2は2026-08-10に完了しました。PIT calendar contractとevent-bundle層は
+**READY_FOR_LICENSED_VENDOR_INGESTION**、価格実験は
+**NO_GO_PRICE_EXPERIMENT_VENDOR_DATA_REQUIRED**です。
+
+2024年CPI/NFPの60 componentを24 bundleへ統合し、Phase 1のFOMC 24件・EIA 52件も
+同じ表現へ接続しました。合計100 bundleを監査しましたが、pre-release vintage・
+履歴live到着時刻・利用権が揃うbundleは0件です。既存研究データを価格学習へ流さない
+negative controlが成功した、という結果です。詳細は
+[Phase 2 result](docs/PHASE2_RESULT.md)と
+[Phase 2 protocol](docs/PHASE2_PROTOCOL.md)を参照してください。
+
 ## Experiment 0
 
 発表直前の最後の気配を基準に、+1秒、+5秒、+30秒、+1分、+5分、+15分、
@@ -88,12 +101,18 @@ macro-lab phase1-complete
 # Phase 1: 事前登録・blob hash・再生hash・テストを最終監査
 macro-lab verify-phase1
 
+# Phase 2: PIT data contract、同時発表bundle、vendor preflight
+macro-lab phase2-complete
+
+# Phase 2: 事前登録・全input／bundle hash・negative controlを監査
+macro-lab verify-phase2
+
 # テスト
 python -m unittest discover -s tests -v
 ```
 
-生成物は `artifacts/phase0_complete_2024/` と `artifacts/phase1_complete/` の
-CSV、JSON、Markdown、SVGです。
+生成物は `artifacts/phase0_complete_2024/`、`artifacts/phase1_complete/`、
+`artifacts/phase2_complete/` のCSV、JSON、Markdown、SVGです。
 生データ・処理済み相場データ・生成物はGit管理外です。
 
 ## リポジトリ規律

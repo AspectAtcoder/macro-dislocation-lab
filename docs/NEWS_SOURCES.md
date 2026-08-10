@@ -76,3 +76,16 @@ catalogued but were not counted toward the Phase 1 gate. No blocking or bot-cont
 bypass was attempted. Trading Economics, LSEG and Bloomberg remain uncontracted;
 therefore consensus vintages, real delivery timestamps and content/ML rights are
 still a hard prerequisite for a price-feature trial.
+
+## Phase 2 vendor preflight
+
+The repository now implements the Trading Economics calendar response normalizer,
+append-only snapshot contract and credential preflight. On 2026-08-10 no API key
+was configured and the guest endpoint returned HTTP 410. No vendor row was counted
+from documentation or unauthenticated access.
+
+The local 2024 research calendar was deliberately used as a negative control: all
+60 components were rejected for price use because their pre-release snapshot time,
+consensus vintage and data rights are not proven. The required paid-trial sample,
+fields, written rights and acceptance tests are frozen in
+`config/vendor_trial_requirements.json`.

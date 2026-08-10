@@ -1,0 +1,64 @@
+{
+  "purpose": "Minimum acceptance criteria before any new price-feature trial",
+  "preferred_first_trial": "Trading Economics Economic Calendar Point-in-Time",
+  "alternatives": [
+    "LSEG Real-Time Economics plus Machine Readable News",
+    "Bloomberg ECO plus Event-Driven Feeds"
+  ],
+  "required_sample": {
+    "countries": ["United States"],
+    "events": ["CPI", "Core CPI", "Nonfarm Payrolls", "Unemployment Rate", "Average Hourly Earnings"],
+    "minimum_history": "2022-01-01 through latest complete month",
+    "required_vintages_per_component": [
+      "last consensus snapshot strictly before release",
+      "first actual snapshot at or after release",
+      "every later correction or revision"
+    ],
+    "delivery_modes": ["historical export", "live or streaming trial"]
+  },
+  "required_fields": [
+    "stable provider event ID",
+    "scheduled timestamp with timezone",
+    "snapshot or as-of timestamp",
+    "provider update timestamp",
+    "client receive timestamp for live trial",
+    "actual",
+    "survey consensus",
+    "previous as published",
+    "revised previous",
+    "reference period",
+    "unit",
+    "source and source URL"
+  ],
+  "written_rights_required": [
+    "local retention of raw vintages",
+    "historical backtesting",
+    "machine-learning training and embedding generation",
+    "derived-data storage and internal use",
+    "backup and disaster recovery",
+    "clear deletion obligations after cancellation"
+  ],
+  "acceptance_tests": [
+    "same-time components share one bundle",
+    "pre-release consensus timestamp is strictly before release",
+    "actual first-seen timestamp is not before release",
+    "revisions append and never overwrite earlier values",
+    "DST and holiday release times match official schedules",
+    "historical export and live schema map through the same normalizer",
+    "missing rights or timestamps fail closed",
+    "100% of sample payloads have stable IDs and explicit units"
+  ],
+  "operational_limits_to_confirm": [
+    "requests and rows per call",
+    "stream reconnect and replay behavior",
+    "rate limits",
+    "historical export limits",
+    "support SLA",
+    "trial cancellation and automatic-renewal terms"
+  ],
+  "secret_handling": {
+    "environment_variable": "TRADING_ECONOMICS_API_KEY",
+    "never_commit_credentials": true,
+    "authenticated_probe_requires_user_supplied_subscription": true
+  }
+}

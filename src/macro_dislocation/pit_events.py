@@ -253,6 +253,18 @@ def validate_component(snapshots: list[PitSnapshot]) -> dict[str, Any]:
 
     selected_pre = max(pre, key=lambda item: item.snapshot_at or "") if pre else None
     selected_post = min(post, key=lambda item: item.snapshot_at or "") if post else None
+    revision_history = [
+        {
+            "snapshot_at": item.snapshot_at,
+            "previous": item.previous,
+            "revised": item.revised,
+            "payload_sha256": item.payload_sha256,
+        }
+        for _, item in sorted(
+            parsed, key=lambda pair: pair[0] or datetime.min.replace(tzinfo=UTC)
+        )
+        if item.revised is not None
+    ]
     eligible = not issues
     return {
         "provider": first.provider,
@@ -269,7 +281,11 @@ def validate_component(snapshots: list[PitSnapshot]) -> dict[str, Any]:
         "consensus": selected_pre.consensus if selected_pre else None,
         "actual": selected_post.actual if selected_post else None,
         "previous_as_published": selected_pre.previous if selected_pre else None,
-        "revised_previous": selected_post.revised if selected_post else None,
+        "revised_previous_at_release": selected_post.revised if selected_post else None,
+        "latest_revised_previous": (
+            revision_history[-1]["revised"] if revision_history else None
+        ),
+        "revision_history": revision_history,
         "consensus_snapshot_at": selected_pre.snapshot_at if selected_pre else None,
         "actual_snapshot_at": selected_post.snapshot_at if selected_post else None,
         "surprise": (

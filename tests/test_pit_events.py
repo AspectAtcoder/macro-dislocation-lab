@@ -124,7 +124,11 @@ class PitEventTests(unittest.TestCase):
         )
         audit = validate_component([pre, release, later])
         self.assertEqual(audit["previous_as_published"], 0.1)
-        self.assertEqual(audit["revised_previous"], 0.15)
+        self.assertEqual(audit["revised_previous_at_release"], 0.15)
+        self.assertEqual(audit["latest_revised_previous"], 0.2)
+        self.assertEqual(
+            [item["revised"] for item in audit["revision_history"]], [0.15, 0.2]
+        )
         self.assertEqual(audit["snapshot_count"], 3)
 
     def test_missing_right_rejects_otherwise_valid_component(self) -> None:
@@ -153,7 +157,9 @@ class PitEventTests(unittest.TestCase):
             "consensus": 0.2,
             "actual": 0.3,
             "previous_as_published": 0.1,
-            "revised_previous": None,
+            "revised_previous_at_release": None,
+            "latest_revised_previous": None,
+            "revision_history": [],
             "consensus_snapshot_at": "2024-01-11T13:29:00+00:00",
             "actual_snapshot_at": "2024-01-11T13:30:01+00:00",
             "surprise": 0.1,
