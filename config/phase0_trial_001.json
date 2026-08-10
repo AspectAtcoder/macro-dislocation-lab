@@ -1,0 +1,57 @@
+{
+  "trial_id": "phase0_trial_001",
+  "registered_date": "2026-08-10",
+  "purpose": "pilot diagnostic of residual predictability; not confirmatory evidence",
+  "asset": "USDJPY",
+  "event_types": ["CPI", "NFP"],
+  "sample": {
+    "year": 2024,
+    "expected_events": 24,
+    "contaminated_for_final_holdout": true,
+    "reason": "aggregate 2024 Experiment 0 results were inspected before this model trial"
+  },
+  "split": {
+    "method": "chronological_fixed_holdout",
+    "train_events": 12,
+    "test_events": 12,
+    "refit_during_test": false
+  },
+  "timing": {
+    "entry_seconds_after_release": 60,
+    "exit_seconds_after_release": 900,
+    "target": "midpoint return from +60 seconds to +15 minutes in basis points"
+  },
+  "features": [
+    {
+      "name": "initial_move_z",
+      "definition": "pre-release midpoint to +60 second midpoint return, train-standardized"
+    },
+    {
+      "name": "primary_surprise_z",
+      "definition": "CPI headline m/m or NFP change actual-minus-forecast, standardized by event type on train only"
+    },
+    {
+      "name": "secondary_surprise_z",
+      "definition": "CPI core m/m surprise z-score; for NFP, mean of AHE surprise z-score and sign-inverted unemployment surprise z-score; train only"
+    }
+  ],
+  "model": {
+    "family": "ridge_linear_regression",
+    "alpha": 1.0,
+    "penalize_intercept": false,
+    "hyperparameter_search": false
+  },
+  "cost": {
+    "quotes": "observed entry ask/bid and exit bid/ask",
+    "additional_roundtrip_slippage_pips": 1.0
+  },
+  "trace_gate": {
+    "all_required": true,
+    "minimum_test_sign_accuracy": 0.5833333333333334,
+    "model_mae_below_zero_forecast": true,
+    "model_mae_below_train_mean_forecast": true,
+    "positive_median_net_bps_after_cost_and_slippage": true
+  },
+  "allowed_model_trials": 1,
+  "deflated_sharpe_ratio": "not computed; sample is structurally insufficient"
+}

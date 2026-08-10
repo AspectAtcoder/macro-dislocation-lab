@@ -1,0 +1,52 @@
+{
+  "decision_date": "2026-08-10",
+  "mvp": {
+    "calendar_consensus": {
+      "provider": "Trading Economics paid Calendar API",
+      "required_capabilities": ["point_in_time", "actual", "forecast", "revised", "streaming"],
+      "status": "availability_verified_not_contracted",
+      "url": "https://docs.tradingeconomics.com/economic_calendar/"
+    },
+    "official_text_and_detail": [
+      {
+        "source": "Federal Reserve RSS and archive",
+        "use": ["FOMC statements", "minutes", "speeches", "testimony"],
+        "url": "https://www.federalreserve.gov/feeds/feeds.htm"
+      },
+      {
+        "source": "BLS official releases and archive",
+        "use": ["CPI detail", "Employment Situation detail"],
+        "url": "https://www.bls.gov/bls/newsrels.htm"
+      },
+      {
+        "source": "EIA Open Data API v2 and WPSR",
+        "use": ["crude inventories", "Cushing", "gasoline", "distillates", "refinery utilization", "imports and exports"],
+        "url": "https://www.eia.gov/opendata/documentation.php"
+      },
+      {
+        "source": "OPEC Monthly Oil Market Report archive",
+        "use": ["demand revisions", "supply revisions", "balance", "conditional language"],
+        "url": "https://publications.opec.org/momr/information/2476"
+      }
+    ]
+  },
+  "production_if_phase1_gate_passes": {
+    "preferred": {
+      "provider": "LSEG Machine Readable News plus Real-Time Economics",
+      "url": "https://www.lseg.com/en/data-analytics/financial-news-service/machine-readable-news"
+    },
+    "alternative": {
+      "provider": "Bloomberg Event-Driven Feeds plus ECO",
+      "url": "https://professional.bloomberg.com/products/data/enterprise-catalog/event-driven-feeds/"
+    },
+    "contract_requirements": [
+      "historical point-in-time delivery",
+      "storage and retention",
+      "backtesting",
+      "embedding generation",
+      "machine-learning training",
+      "derived-data rights"
+    ]
+  },
+  "not_primary_trade_sources": ["generic NewsAPI", "Google News scraping", "social-media scraping"]
+}

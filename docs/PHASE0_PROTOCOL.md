@@ -56,3 +56,10 @@ component surprise, jump sign/magnitude available at the declared execution time
 and one pre-event regime variable. Predict only the additional return from an
 explicit executable start time to +15m. Use walk-forward fitting and report all
 attempted specifications.
+
+The single Phase 0 pilot trial is frozen in `config/phase0_trial_001.json`: entry
+at +60 seconds, exit at +15 minutes, three features, Ridge alpha 1.0, first 12
+events for fitting and last 12 for a fixed chronological test. The 2024 aggregate
+study was already inspected, so this is a diagnostic pilot rather than a pristine
+holdout. Its purpose is to decide whether the current numeric specification has a
+trace worth carrying forward, not to establish profitability.

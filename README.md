@@ -56,11 +56,14 @@ macro-lab download-quotes
 # 5. Experiment 0
 macro-lab experiment0
 
+# 6. 登録済み単一モデルを含むPhase 0最終判定
+macro-lab phase0-complete
+
 # テスト
 python -m unittest discover -s tests -v
 ```
 
-生成物は `artifacts/experiment0_2024/` のCSV、JSON、Markdown、SVGです。
+最終生成物は `artifacts/phase0_complete_2024/` のCSV、JSON、Markdown、SVGです。
 生データ・処理済み相場データ・生成物はGit管理外です。
 
 ## リポジトリ規律
@@ -74,7 +77,7 @@ python -m unittest discover -s tests -v
   キルスイッチを必須とする。
 
 詳細は [Phase 0 protocol](docs/PHASE0_PROTOCOL.md) と
-[data sources](docs/DATA_SOURCES.md) を参照してください。
+[data sources](docs/DATA_SOURCES.md)、[news sources](docs/NEWS_SOURCES.md)を参照してください。
 
 ## 免責
 
