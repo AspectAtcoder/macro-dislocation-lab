@@ -1,0 +1,13 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Raw/processed market data can be large and may have redistribution limits.
+data/raw/
+data/processed/
+
+# Generated research artifacts are reproducible and not committed by default.
+artifacts/
