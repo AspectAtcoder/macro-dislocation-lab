@@ -1,0 +1,44 @@
+{
+  "schema_version": "vendor_capture_envelope_v1",
+  "description": "Append-only raw vendor responses with separate provider, wall-clock receive and monotonic receive timestamps.",
+  "required_observation_fields": [
+    "capture_id",
+    "provider",
+    "transport",
+    "public_endpoint",
+    "request_started_at",
+    "received_at",
+    "received_monotonic_ns",
+    "http_status",
+    "payload_sha256",
+    "payload_bytes",
+    "license_class",
+    "rights_profile",
+    "provenance"
+  ],
+  "clock_rules": {
+    "request_started_at": "Offset-aware UTC wall-clock timestamp captured immediately before a request or stream wait.",
+    "received_at": "Offset-aware UTC wall-clock timestamp captured immediately after the complete response or message is in memory.",
+    "received_monotonic_ns": "Local monotonic clock reading paired with received_at; it is for ordering and latency deltas, not UTC reconstruction.",
+    "provider_updated_at": "Provider field such as LastUpdate; never substitute it for received_at or snapshot_at.",
+    "snapshot_at": "For a live capture, use received_at. Historical retrieval time does not prove an earlier live snapshot."
+  },
+  "store_rules": {
+    "raw_payloads": "Write exact response bytes once under their SHA-256 content address.",
+    "observations": "Append one JSONL observation for every receipt, including duplicate payloads.",
+    "overwrite": "Never overwrite or truncate a raw blob or observation log.",
+    "replay": "Recompute normalized snapshots only from immutable raw blobs plus observation envelopes.",
+    "integrity": "Every observation must resolve to a blob whose bytes match payload_sha256 and payload_bytes."
+  },
+  "security_rules": {
+    "credentials": "Read credentials from the environment only and never write them to URLs, logs, reports, manifests or exceptions.",
+    "public_endpoint": "Persist scheme, host and path only; strip query strings and fragments.",
+    "rights": "Authenticated capture requires a separate approved rights attestation with every Phase 2 research right explicitly true.",
+    "documentation_examples": "Documentation payloads and synthetic fixtures are never empirical observations or price-eligible evidence."
+  },
+  "supported_transports": [
+    "https_snapshot",
+    "websocket_calendar",
+    "synthetic_fixture"
+  ]
+}
