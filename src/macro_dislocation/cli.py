@@ -9,7 +9,9 @@ from .baseline import run_baseline
 from .dukascopy import event_hours, write_quote_csv
 from .experiment import run_experiment
 from .phase0 import run_phase0
+from .phase1 import run_phase1
 from .verify import verify_phase0
+from .verify_phase1 import verify_phase1
 
 CONSENSUS_URL = "https://huggingface.co/datasets/Ehsanrs2/Forex_Factory_Calendar"
 
@@ -80,6 +82,32 @@ def _verify_phase0(args: argparse.Namespace) -> None:
         raise SystemExit(1)
 
 
+def _phase1(args: argparse.Namespace) -> None:
+    result = run_phase1(
+        Path(args.specification),
+        Path(args.axes),
+        Path(args.news_sources),
+        Path(args.store),
+        Path(args.output_dir),
+        workers=args.workers,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase1(args: argparse.Namespace) -> None:
+    result = verify_phase1(
+        Path(args.output_dir),
+        Path(args.store),
+        Path(args.specification),
+        Path(args.axes),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="macro-lab")
     commands = root.add_subparsers(required=True)
@@ -129,6 +157,24 @@ def parser() -> argparse.ArgumentParser:
     verify.add_argument("--trial-registry", default="config/trial_registry.csv")
     verify.add_argument("--project-root", default=".")
     verify.set_defaults(func=_verify_phase0)
+
+    phase1 = commands.add_parser("phase1-complete")
+    phase1.add_argument("--specification", default="config/phase1_trial_001.json")
+    phase1.add_argument("--axes", default="config/event_axes.json")
+    phase1.add_argument("--news-sources", default="config/news_sources.json")
+    phase1.add_argument("--store", default="data/raw/news_store")
+    phase1.add_argument("--output-dir", default="artifacts/phase1_complete")
+    phase1.add_argument("--workers", type=int, default=8)
+    phase1.set_defaults(func=_phase1)
+
+    verify1 = commands.add_parser("verify-phase1")
+    verify1.add_argument("--output-dir", default="artifacts/phase1_complete")
+    verify1.add_argument("--store", default="data/raw/news_store")
+    verify1.add_argument("--specification", default="config/phase1_trial_001.json")
+    verify1.add_argument("--axes", default="config/event_axes.json")
+    verify1.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify1.add_argument("--project-root", default=".")
+    verify1.set_defaults(func=_verify_phase1)
     return root
 
 
