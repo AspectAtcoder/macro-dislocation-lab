@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/macro-dislocation-lab/vendor-rights-attestation.schema.json",
+  "title": "Vendor rights attestation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "approved",
+    "agreement_id",
+    "approved_by",
+    "attested_at",
+    "provider",
+    "license_class",
+    "rights"
+  ],
+  "properties": {
+    "approved": {"const": true},
+    "agreement_id": {"type": "string", "minLength": 1},
+    "approved_by": {"type": "string", "minLength": 1},
+    "attested_at": {"type": "string", "format": "date-time"},
+    "provider": {"type": "string", "minLength": 1},
+    "license_class": {"type": "string", "minLength": 1},
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retention",
+        "historical_backtesting",
+        "machine_learning",
+        "derived_data"
+      ],
+      "properties": {
+        "retention": {"const": true},
+        "historical_backtesting": {"const": true},
+        "machine_learning": {"const": true},
+        "derived_data": {"const": true}
+      }
+    }
+  }
+}

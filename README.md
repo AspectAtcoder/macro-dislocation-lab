@@ -49,6 +49,19 @@ negative controlが成功した、という結果です。詳細は
 [Phase 2 result](docs/PHASE2_RESULT.md)と
 [Phase 2 protocol](docs/PHASE2_PROTOCOL.md)を参照してください。
 
+## Phase 3 status
+
+Phase 3は2026-08-10に **READY_FOR_AUTHENTICATED_SHADOW_CAPTURE** で完了しました。
+HTTPS snapshotとcalendar streamのpayloadを、credentialを残さずcontent-addressed raw
+blobとappend-only observationへ保存し、同じPIT normalizerで再生する層です。
+
+登録済みsynthetic fixtureで3受信・2 raw blob・3 snapshot・1 componentを再生し、
+hash一致、二重時計の分離、5 failure injection、全53テストがPASSしました。実vendor
+行は0件で、価格実験は引き続きNo-Goです。詳細は
+[Phase 3 result](docs/PHASE3_RESULT.md)、
+[Phase 3 protocol](docs/PHASE3_PROTOCOL.md)、
+[vendor capture runbook](docs/VENDOR_CAPTURE_RUNBOOK.md)を参照してください。
+
 ## Experiment 0
 
 発表直前の最後の気配を基準に、+1秒、+5秒、+30秒、+1分、+5分、+15分、
@@ -107,12 +120,19 @@ macro-lab phase2-complete
 # Phase 2: 事前登録・全input／bundle hash・negative controlを監査
 macro-lab verify-phase2
 
+# Phase 3: immutable vendor captureとoffline failure injectionを実行
+macro-lab phase3-complete
+
+# Phase 3: preregistration、raw blob、replay hash、テストを監査
+macro-lab verify-phase3
+
 # テスト
 python -m unittest discover -s tests -v
 ```
 
 生成物は `artifacts/phase0_complete_2024/`、`artifacts/phase1_complete/`、
-`artifacts/phase2_complete/` のCSV、JSON、Markdown、SVGです。
+`artifacts/phase2_complete/`、`artifacts/phase3_complete/` のCSV、JSON、
+Markdown、SVGです。
 生データ・処理済み相場データ・生成物はGit管理外です。
 
 ## リポジトリ規律

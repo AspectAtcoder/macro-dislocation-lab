@@ -8,6 +8,8 @@ __pycache__/
 # Raw/processed market data can be large and may have redistribution limits.
 data/raw/
 data/processed/
+data/private/
+.env
 
 # Generated research artifacts are reproducible and not committed by default.
 artifacts/

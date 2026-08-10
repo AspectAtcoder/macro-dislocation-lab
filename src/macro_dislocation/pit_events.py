@@ -139,6 +139,14 @@ def _slug(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", value.lower()).strip("_")
 
 
+def _te_get(row: dict[str, Any], *names: str) -> Any:
+    normalized = {str(key).strip().lower(): value for key, value in row.items()}
+    for name in names:
+        if name.strip().lower() in normalized:
+            return normalized[name.strip().lower()]
+    return None
+
+
 def normalize_trading_economics_snapshot(
     rows: Iterable[dict[str, Any]],
     *,
@@ -146,42 +154,47 @@ def normalize_trading_economics_snapshot(
     received_at: str,
     rights_profile: dict[str, bool],
     license_class: str,
+    provenance: str = "captured_api_snapshot",
 ) -> list[PitSnapshot]:
-    """Normalize one captured TE response; caller supplies its actual capture time."""
+    """Normalize captured TE snapshot or stream rows through one field mapper."""
     capture_time = _utc_iso(snapshot_at)
     receive_time = _utc_iso(received_at)
     output: list[PitSnapshot] = []
     for row in rows:
-        provider_id = str(row.get("CalendarId") or "").strip()
+        provider_id = str(_te_get(row, "CalendarId") or "").strip()
         if not provider_id:
             raise ValueError("Trading Economics row missing CalendarId")
-        event_name = str(row.get("Event") or row.get("Category") or "").strip()
-        scheduled = _te_datetime(str(row["Date"]))
+        event_name = str(_te_get(row, "Event", "Category") or "").strip()
+        raw_date = _te_get(row, "Date")
+        if not raw_date:
+            raise ValueError("Trading Economics row missing Date")
+        scheduled = _te_datetime(str(raw_date))
         payload_hash = _hash_json(row)
+        last_update = _te_get(row, "LastUpdate")
         output.append(
             PitSnapshot(
                 provider="trading_economics",
                 provider_event_id=provider_id,
-                event_type=str(row.get("Category") or event_name),
+                event_type=str(_te_get(row, "Category") or event_name),
                 component=_slug(event_name),
-                country=str(row.get("Country") or ""),
-                currency=str(row.get("Currency") or ""),
+                country=str(_te_get(row, "Country") or ""),
+                currency=str(_te_get(row, "Currency") or ""),
                 scheduled_at=scheduled,
-                reference_period=str(row.get("Reference") or ""),
-                unit=str(row.get("Unit") or "unspecified"),
+                reference_period=str(_te_get(row, "Reference") or ""),
+                unit=str(_te_get(row, "Unit") or "unspecified"),
                 snapshot_at=capture_time,
                 received_at=receive_time,
-                actual=parse_number(str(row.get("Actual") or "")),
-                consensus=parse_number(str(row.get("Forecast") or "")),
-                previous=parse_number(str(row.get("Previous") or "")),
-                revised=parse_number(str(row.get("Revised") or "")),
-                source_url=str(row.get("SourceURL") or row.get("URL") or ""),
+                actual=parse_number(str(_te_get(row, "Actual") or "")),
+                consensus=parse_number(str(_te_get(row, "Forecast") or "")),
+                previous=parse_number(str(_te_get(row, "Previous") or "")),
+                revised=parse_number(str(_te_get(row, "Revised") or "")),
+                source_url=str(_te_get(row, "SourceURL", "URL") or ""),
                 license_class=license_class,
                 rights_profile={name: bool(rights_profile.get(name, False)) for name in RIGHTS},
                 payload_sha256=payload_hash,
-                provenance="captured_api_snapshot",
+                provenance=provenance,
                 provider_updated_at=(
-                    _te_datetime(str(row["LastUpdate"])) if row.get("LastUpdate") else None
+                    _te_datetime(str(last_update)) if last_update else None
                 ),
             )
         )

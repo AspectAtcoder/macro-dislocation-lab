@@ -2,4 +2,4 @@ trial_id,registered_commit,run_date,status,asset,event_types,entry_seconds,exit_
 phase0_trial_001,ddaf63f,2026-08-10,completed,USDJPY,CPI+NFP,60,900,3,Ridge-alpha-1,12,12,NO_TRACE,"Pilot only; 2024 was previously inspected and is not a final holdout"
 phase1_trial_001,f00970a,2026-08-10,completed,NONE,FOMC+EIA-WPSR,NA,NA,6,fixed-lexicon-diff-v1,0,0,PASS_PIPELINE_ONLY,"24 Fed plus 52 EIA official documents; no train/test split and no price prediction"
 phase2_trial_001,e2b1b73,2026-08-10,completed,NONE,CPI+NFP+FOMC+EIA-WPSR,NA,NA,10,pit-contract-v1,0,0,READY_FOR_LICENSED_VENDOR_INGESTION,"100 bundles audited; 0 price eligible; economic decision remains vendor-data No-Go"
-phase3_trial_001,8801e55,2026-08-10,registered,NONE,SYNTHETIC-TE-CALENDAR,NA,NA,0,vendor-capture-contract-v1,0,0,PENDING,"Offline capture and replay integrity only; authenticated requests, market join and price model prohibited"
+phase3_trial_001,8801e55,2026-08-10,completed,NONE,SYNTHETIC-TE-CALENDAR,NA,NA,0,vendor-capture-contract-v1,0,0,READY_FOR_AUTHENTICATED_SHADOW_CAPTURE,"3 receipts and 2 immutable payloads; 53 tests; 0 empirical rows; no authenticated request or price join"

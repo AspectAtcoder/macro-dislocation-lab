@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+from dataclasses import asdict
 from pathlib import Path
 
 from .calendar_data import load_event_times, normalize_calendar
@@ -11,9 +13,16 @@ from .experiment import run_experiment
 from .phase0 import run_phase0
 from .phase1 import run_phase1
 from .phase2 import run_phase2
+from .phase3 import run_phase3
+from .vendor_capture import (
+    VendorCaptureStore,
+    capture_authenticated_snapshot,
+    capture_stream_jsonl,
+)
 from .verify import verify_phase0
 from .verify_phase1 import verify_phase1
 from .verify_phase2 import verify_phase2
+from .verify_phase3 import verify_phase3
 
 CONSENSUS_URL = "https://huggingface.co/datasets/Ehsanrs2/Forex_Factory_Calendar"
 
@@ -140,6 +149,73 @@ def _verify_phase2(args: argparse.Namespace) -> None:
         raise SystemExit(1)
 
 
+def _phase3(args: argparse.Namespace) -> None:
+    result = run_phase3(
+        Path(args.specification),
+        Path(args.capture_contract),
+        Path(args.pit_contract),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase3(args: argparse.Namespace) -> None:
+    result = verify_phase3(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.capture_contract),
+        Path(args.pit_contract),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
+def _capture_te_snapshot(args: argparse.Namespace) -> None:
+    result = capture_authenticated_snapshot(
+        VendorCaptureStore(Path(args.store)),
+        rights_attestation_path=Path(args.rights_attestation),
+        country=args.country,
+        indicators=args.indicator,
+        start=args.start,
+        end=args.end,
+        timeout=args.timeout,
+    )
+    print(
+        json.dumps(
+            {
+                "observation": result.observation,
+                "snapshots": [asdict(snapshot) for snapshot in result.snapshots],
+                "inserted_blob": result.inserted_blob,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+
+
+def _capture_te_stream_jsonl(args: argparse.Namespace) -> None:
+    results = capture_stream_jsonl(
+        VendorCaptureStore(Path(args.store)),
+        sys.stdin,
+        rights_attestation_path=Path(args.rights_attestation),
+        endpoint=args.endpoint,
+    )
+    print(
+        json.dumps(
+            {
+                "captured_messages": len(results),
+                "capture_ids": [item.observation["capture_id"] for item in results],
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="macro-lab")
     commands = root.add_subparsers(required=True)
@@ -229,6 +305,45 @@ def parser() -> argparse.ArgumentParser:
     verify2.add_argument("--trial-registry", default="config/trial_registry.csv")
     verify2.add_argument("--project-root", default=".")
     verify2.set_defaults(func=_verify_phase2)
+
+    phase3 = commands.add_parser("phase3-complete")
+    phase3.add_argument("--specification", default="config/phase3_trial_001.json")
+    phase3.add_argument(
+        "--capture-contract", default="config/vendor_capture_contract.json"
+    )
+    phase3.add_argument("--pit-contract", default="config/pit_event_contract.json")
+    phase3.add_argument("--output-dir", default="artifacts/phase3_complete")
+    phase3.add_argument("--project-root", default=".")
+    phase3.set_defaults(func=_phase3)
+
+    verify3 = commands.add_parser("verify-phase3")
+    verify3.add_argument("--output-dir", default="artifacts/phase3_complete")
+    verify3.add_argument("--specification", default="config/phase3_trial_001.json")
+    verify3.add_argument(
+        "--capture-contract", default="config/vendor_capture_contract.json"
+    )
+    verify3.add_argument("--pit-contract", default="config/pit_event_contract.json")
+    verify3.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify3.add_argument("--project-root", default=".")
+    verify3.set_defaults(func=_verify_phase3)
+
+    te_snapshot = commands.add_parser("capture-te-snapshot")
+    te_snapshot.add_argument("--rights-attestation", required=True)
+    te_snapshot.add_argument("--store", default="data/raw/vendor_capture_store")
+    te_snapshot.add_argument("--country", default="united states")
+    te_snapshot.add_argument("--indicator", action="append", required=True)
+    te_snapshot.add_argument("--start", required=True)
+    te_snapshot.add_argument("--end", required=True)
+    te_snapshot.add_argument("--timeout", type=float, default=30.0)
+    te_snapshot.set_defaults(func=_capture_te_snapshot)
+
+    te_stream = commands.add_parser("capture-te-stream-jsonl")
+    te_stream.add_argument("--rights-attestation", required=True)
+    te_stream.add_argument("--store", default="data/raw/vendor_capture_store")
+    te_stream.add_argument(
+        "--endpoint", default="wss://stream.tradingeconomics.com/"
+    )
+    te_stream.set_defaults(func=_capture_te_stream_jsonl)
     return root
 
 

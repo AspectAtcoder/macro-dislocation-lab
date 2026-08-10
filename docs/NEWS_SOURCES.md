@@ -89,3 +89,19 @@ The local 2024 research calendar was deliberately used as a negative control: al
 consensus vintage and data rights are not proven. The required paid-trial sample,
 fields, written rights and acceptance tests are frozen in
 `config/vendor_trial_requirements.json`.
+
+## Phase 3 capture implementation
+
+The repository now has a transport-neutral immutable capture store for Trading
+Economics calendar data. It maps the official HTTPS snapshot field style and the
+lower-case calendar-stream field style through one normalizer. The implementation
+follows the provider's current official documentation:
+
+- point-in-time calendar: <https://docs.tradingeconomics.com/economic_calendar/point-in-time/>;
+- latest-event snapshot and updates: <https://docs.tradingeconomics.com/economic_calendar/snapshot/>;
+- persistent calendar stream: <https://docs.tradingeconomics.com/economic_calendar/streaming/>.
+
+The completed offline trial used original synthetic fixtures, not payloads copied
+from these pages. It made no authenticated request and acquired zero empirical
+vendor rows. The next production action remains conditional on a paid credential
+and an approved rights attestation.
