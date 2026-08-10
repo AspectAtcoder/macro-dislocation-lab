@@ -1,0 +1,81 @@
+{
+  "trial_id": "phase1_trial_001",
+  "registered_at": "2026-08-10T00:00:00+09:00",
+  "purpose": "Validate immutable point-in-time official-source ingestion and deterministic low-dimensional event extraction; do not test a price model.",
+  "hypothesis": "Official release archives can be converted into replayable event records, while FOMC wording changes can be represented by a fixed small set of predeclared lexical axes without fitting a high-dimensional predictor.",
+  "scope": {
+    "federal_reserve": {
+      "document_type": "fomc_statement",
+      "years": [2022, 2023, 2024],
+      "minimum_documents": 24,
+      "expected_release_time": "14:00 America/New_York"
+    },
+    "eia": {
+      "document_type": "wpsr_table1_csv",
+      "years": [2024],
+      "minimum_documents": 50,
+      "expected_release_time": "10:30 America/New_York unless a holiday schedule says otherwise"
+    }
+  },
+  "event_schema": {
+    "required_fields": [
+      "source",
+      "source_event_id",
+      "version",
+      "document_type",
+      "title",
+      "canonical_url",
+      "scheduled_at",
+      "published_at",
+      "first_seen_at",
+      "received_at",
+      "feature_ready_at",
+      "timestamp_basis",
+      "content_type",
+      "content_sha256",
+      "raw_path",
+      "license_class"
+    ],
+    "storage": "content-addressed raw bytes plus SQLite manifest",
+    "version_rule": "A new content hash under the same source_event_id creates a new immutable version; an identical re-fetch creates only an observation.",
+    "historical_limit": "first_seen_at and received_at describe this archive fetch, not the original real-time arrival. Inferred release times must be labeled as inferred."
+  },
+  "extractor": {
+    "name": "fixed_lexicon_diff_v1",
+    "allowed_trials": 1,
+    "fit_parameters": 0,
+    "text_axes": [
+      "inflation_pressure",
+      "labor_strength",
+      "growth_strength",
+      "policy_tightness",
+      "uncertainty",
+      "conditionality"
+    ],
+    "comparison": "previous FOMC statement in publication order",
+    "interpretation": "model inputs for later testing, not causal contributions and not trading signals"
+  },
+  "completion_gates": {
+    "minimum_source_families": 2,
+    "minimum_total_documents": 74,
+    "minimum_fed_documents": 24,
+    "minimum_eia_documents": 50,
+    "raw_hashes_valid": true,
+    "duplicate_refetch_creates_no_document_version": true,
+    "replay_feature_hash_identical": true,
+    "maximum_text_dimensions": 6,
+    "required_test_count": 18,
+    "price_prediction_executed": false
+  },
+  "decision_rule": {
+    "PASS_PIPELINE_ONLY": "All completion gates pass. This authorizes a separately preregistered vendor/feature study, not trading.",
+    "FAIL_PIPELINE": "Any immutable-storage, provenance, replay, source-count, dimension or test gate fails."
+  },
+  "out_of_scope": [
+    "price prediction",
+    "trading decisions",
+    "neural-network fitting",
+    "historical real-time arrival reconstruction from archive fetch timestamps",
+    "unlicensed vendor content"
+  ]
+}

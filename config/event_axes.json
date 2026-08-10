@@ -1,0 +1,97 @@
+{
+  "version": "fixed_lexicon_diff_v1",
+  "normalization": "lowercase Unicode word tokens; phrase weights are counted before unigram weights",
+  "axes": {
+    "inflation_pressure": {
+      "positive": {
+        "inflation remains elevated": 3.0,
+        "inflation is elevated": 2.0,
+        "inflation pressures": 2.0,
+        "upside risks to inflation": 2.0,
+        "price pressures": 1.5,
+        "elevated": 1.0
+      },
+      "negative": {
+        "inflation has eased": 2.0,
+        "further progress": 1.5,
+        "moving sustainably toward": 1.5,
+        "moderated": 1.0,
+        "eased": 1.0
+      }
+    },
+    "labor_strength": {
+      "positive": {
+        "job gains have remained strong": 2.5,
+        "labor market remains strong": 2.0,
+        "unemployment rate remained low": 1.5,
+        "strong job gains": 1.5,
+        "robust": 1.0
+      },
+      "negative": {
+        "job gains have slowed": 2.5,
+        "unemployment rate has moved up": 2.0,
+        "labor market conditions have eased": 2.0,
+        "weakened": 1.5,
+        "softened": 1.0
+      }
+    },
+    "growth_strength": {
+      "positive": {
+        "expanded at a solid pace": 2.0,
+        "continued to expand": 1.5,
+        "solid pace": 1.0,
+        "strong pace": 1.0,
+        "accelerated": 1.0
+      },
+      "negative": {
+        "activity has slowed": 2.0,
+        "slowed from its strong pace": 1.5,
+        "contracted": 1.5,
+        "weaker": 1.0,
+        "slowed": 1.0
+      }
+    },
+    "policy_tightness": {
+      "positive": {
+        "raise the target range": 2.5,
+        "additional policy firming": 2.0,
+        "highly attentive to inflation risks": 1.5,
+        "restrictive": 1.0,
+        "firming": 1.0
+      },
+      "negative": {
+        "reduce the target range": 2.5,
+        "lower the target range": 2.5,
+        "rate cut": 2.0,
+        "less restrictive": 1.5,
+        "easing": 1.0
+      }
+    },
+    "uncertainty": {
+      "positive": {
+        "economic outlook is uncertain": 2.0,
+        "uncertain": 1.0,
+        "uncertainty": 1.0,
+        "risks": 0.5
+      },
+      "negative": {
+        "greater confidence": 1.5,
+        "better balance": 1.0,
+        "balanced": 0.5
+      }
+    },
+    "conditionality": {
+      "positive": {
+        "incoming data": 1.0,
+        "balance of risks": 1.0,
+        "would be prepared": 1.0,
+        "as appropriate": 0.5,
+        "depends": 0.5,
+        "if": 0.25
+      },
+      "negative": {
+        "will": 0.1
+      }
+    }
+  }
+}
