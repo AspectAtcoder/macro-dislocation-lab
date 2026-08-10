@@ -27,9 +27,9 @@ Phase 0は2026-08-10に完了しました。登録済み3特徴Ridgeモデルは
 ## Phase 1 status
 
 Phase 1は2026-08-10に **PASS_PIPELINE_ONLY** で完了しました。Fed FOMC声明24件と
-EIA WPSR 52件を公式アーカイブから2回取得し、document vintageは76件のまま、
-observationだけが154件へ増えることを確認しました。固定6軸とEIA構造化特徴の再生hashは
-一致し、25テストと最終verifierが全項目PASSです。
+EIA WPSR 52件を公式アーカイブから取得し、その後さらに2回ネットワーク再取得しました。
+document vintageは76件のまま、各runの重複probeを含むobservationだけが231件へ増加。
+固定6軸とEIA構造化特徴の再生hashは一致し、25テストと最終verifierが全項目PASSです。
 
 これは取得・版管理・再現性のGoであり、価格予測のGoではありません。consensusと
 ベンダー実配信時刻を含むpoint-in-time履歴は未契約です。詳細は

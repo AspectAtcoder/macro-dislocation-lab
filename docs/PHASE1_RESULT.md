@@ -8,7 +8,8 @@ No-Go.
 
 ## Evidence
 
-The pipeline downloaded the preregistered official archive set twice:
+The pipeline downloaded the preregistered official archive set once and then
+completed two further network re-acquisitions:
 
 | Source | Documents | Feature rows | Publication-time basis |
 |---|---:|---:|---|
@@ -16,14 +17,15 @@ The pipeline downloaded the preregistered official archive set twice:
 | EIA WPSR table 1, 2024 | 52 | 52 | archive date plus schedule-inferred time |
 | Total | 76 | 76 | mixed; explicitly labelled per record |
 
-The first acquisition created 76 document vintages. The second real network
-acquisition created zero additional vintages and increased fetch observations to
-154. The raw/content hash audit checked all 76 records. Replaying the extractor
-produced the same feature hash both times:
+The first acquisition created 76 document vintages. Both real network
+re-acquisitions created zero additional vintages. Including one intentional
+duplicate probe in each run, fetch observations increased to 231. The raw/content
+hash audit checked all 76 records. Replaying the extractor produced the same
+feature hash after every run:
 
 `b0cb6c5b77d3d68a034d2d7bc0b11f775a617048b01e66a5939389034572d9e3`
 
-All 24 unit tests and every `verify-phase1` check passed. The verifier also checks
+All 25 unit tests and every `verify-phase1` check passed. The verifier also checks
 that the live specification and six-axis lexicon match the preregistration commit
 `f00970a`.
 
