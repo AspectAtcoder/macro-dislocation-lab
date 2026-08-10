@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from macro_dislocation.baseline import fit_ridge, predict, run_baseline
+from macro_dislocation.phase0 import audit_inputs
 
 
 class BaselineTests(unittest.TestCase):
@@ -125,6 +126,25 @@ class BaselineTests(unittest.TestCase):
                 newline="", encoding="utf-8"
             ) as handle:
                 self.assertEqual(len(list(csv.DictReader(handle))), 12)
+
+    def test_input_audit_detects_valid_small_shape_as_non_phase0(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            events = root / "events.csv"
+            quotes = root / "quotes.csv"
+            events.write_text(
+                "event_id,event_type,cpi_mom_actual_pct,cpi_mom_forecast_pct,nfp_change_actual_k,nfp_change_forecast_k\n"
+                "c,CPI,0.3,0.2,,\n",
+                encoding="utf-8",
+            )
+            quotes.write_text(
+                "timestamp_utc,bid,ask,source\n"
+                "2024-01-01T00:00:00+00:00,100.0,100.01,test\n",
+                encoding="utf-8",
+            )
+            audit = audit_inputs(events, quotes)
+            self.assertFalse(audit["valid"])
+            self.assertEqual(audit["quotes"]["crossed"], 0)
 
 
 if __name__ == "__main__":

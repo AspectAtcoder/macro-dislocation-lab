@@ -43,3 +43,8 @@
 Databento/CME MDP3, Bloomberg ECO, and LSEG data are plausible production inputs,
 but purchase is deferred until Experiment 0 demonstrates a residual worth testing.
 This prevents paying for data before the basic Go/No-Go gate is passed.
+
+The completed Phase 0 numeric trial did not pass its predictive-trace gate. A full
+production purchase remains deferred. Trading Economics point-in-time Calendar API
+availability has been verified as the lower-friction limited-trial candidate, but
+no subscription or license rights are implied by this repository.

@@ -1,0 +1,2 @@
+trial_id,registered_commit,run_date,status,asset,event_types,entry_seconds,exit_seconds,features,model,train_events,test_events,result,notes
+phase0_trial_001,ddaf63f,2026-08-10,completed,USDJPY,CPI+NFP,60,900,3,Ridge-alpha-1,12,12,NO_TRACE,"Pilot only; 2024 was previously inspected and is not a final holdout"

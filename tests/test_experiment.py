@@ -40,6 +40,8 @@ class ExperimentTests(unittest.TestCase):
         five = next(row for row in rows if row["horizon_seconds"] == 300)
         self.assertAlmostEqual(float(five["completion_ratio"]), 0.5, places=3)
         self.assertEqual(five["residual_continues_initial"], 1)
+        self.assertEqual(five["baseline_lead_ms"], 0.0)
+        self.assertEqual(five["horizon_lag_ms"], 0.0)
         self.assertLess(float(five["long_residual_net_bps"]), float(five["residual_to_final_bps"]))
         summary = summarize(rows)
         self.assertEqual(summary["screen"]["jump_capture_at_5m"], "REVIEW")

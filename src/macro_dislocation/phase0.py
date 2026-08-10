@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
+import math
 import platform
 from datetime import UTC, datetime
 from pathlib import Path
@@ -16,6 +18,82 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def audit_inputs(events_path: Path, quotes_path: Path) -> dict[str, object]:
+    with events_path.open(newline="", encoding="utf-8") as handle:
+        events = list(csv.DictReader(handle))
+    event_ids = [row["event_id"] for row in events]
+    event_types: dict[str, int] = {}
+    missing_primary = 0
+    for row in events:
+        event_types[row["event_type"]] = event_types.get(row["event_type"], 0) + 1
+        primary = (
+            row.get("cpi_mom_actual_pct", "")
+            if row["event_type"] == "CPI"
+            else row.get("nfp_change_actual_k", "")
+        )
+        forecast = (
+            row.get("cpi_mom_forecast_pct", "")
+            if row["event_type"] == "CPI"
+            else row.get("nfp_change_forecast_k", "")
+        )
+        missing_primary += int(not primary or not forecast)
+
+    quote_count = crossed = out_of_order = duplicate_timestamps = 0
+    previous: datetime | None = None
+    first: datetime | None = None
+    last: datetime | None = None
+    minimum_spread = math.inf
+    maximum_spread = -math.inf
+    sources: dict[str, int] = {}
+    with quotes_path.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            timestamp = datetime.fromisoformat(row["timestamp_utc"]).astimezone(UTC)
+            bid, ask = float(row["bid"]), float(row["ask"])
+            quote_count += 1
+            crossed += int(bid > ask)
+            out_of_order += int(previous is not None and timestamp < previous)
+            duplicate_timestamps += int(previous == timestamp)
+            previous = timestamp
+            first = first or timestamp
+            last = timestamp
+            spread_pips = (ask - bid) * 100.0
+            minimum_spread = min(minimum_spread, spread_pips)
+            maximum_spread = max(maximum_spread, spread_pips)
+            source = row.get("source", "unknown")
+            sources[source] = sources.get(source, 0) + 1
+    valid = all(
+        [
+            len(events) == 24,
+            len(set(event_ids)) == len(event_ids),
+            event_types == {"NFP": 12, "CPI": 12},
+            missing_primary == 0,
+            quote_count > 0,
+            crossed == 0,
+            out_of_order == 0,
+        ]
+    )
+    return {
+        "valid": valid,
+        "events": {
+            "rows": len(events),
+            "unique_event_ids": len(set(event_ids)),
+            "by_type": event_types,
+            "missing_primary_actual_or_forecast": missing_primary,
+        },
+        "quotes": {
+            "rows": quote_count,
+            "crossed": crossed,
+            "out_of_order": out_of_order,
+            "adjacent_duplicate_timestamps": duplicate_timestamps,
+            "first_timestamp_utc": first.isoformat() if first else None,
+            "last_timestamp_utc": last.isoformat() if last else None,
+            "minimum_spread_pips": minimum_spread if quote_count else None,
+            "maximum_spread_pips": maximum_spread if quote_count else None,
+            "sources": sources,
+        },
+    }
 
 
 def _group(summary: dict[str, object], event_type: str, horizon: int) -> dict[str, object]:
@@ -52,7 +130,7 @@ Current strategy specification: **{decision['current_numeric_specification']}**
 ## Scope completed
 
 - USD/JPY, U.S. CPI and Employment Situation only.
-- 2024 pilot: 24 simultaneous-release bundles and 997,364 bid/ask ticks.
+- 2024 pilot: 24 simultaneous-release bundles and {int(summary['data_audit']['quotes']['rows']):,} bid/ask ticks.
 - Price-arrival study at +1s, +5s, +30s, +1m, +5m, +15m and +60m.
 - One registered three-feature Ridge trial, +1m entry to +15m exit.
 - Dynamic observed bid/ask plus a 1.0-pip round-trip slippage buffer.
@@ -61,6 +139,8 @@ Current strategy specification: **{decision['current_numeric_specification']}**
 ## Experiment 0
 
 Coverage was {experiment['coverage']['analyzed_events']} / {experiment['coverage']['scheduled_events']} events.
+Maximum selected-quote lag was {_number(experiment['data_quality']['max_horizon_quote_lag_ms'], 0)} ms;
+maximum pre-release baseline lead was {_number(experiment['data_quality']['max_baseline_quote_lead_ms'], 0)} ms.
 Median +5m completion toward the +60m level was
 {_number(cpi_5m['median_completion_pct'], 1)}% for CPI and
 {_number(nfp_5m['median_completion_pct'], 1)}% for NFP. Median absolute residual
@@ -119,6 +199,12 @@ def run_phase0(
 ) -> dict[str, object]:
     news_sources = json.loads(news_sources_path.read_text(encoding="utf-8"))
     output_dir.mkdir(parents=True, exist_ok=True)
+    data_audit = audit_inputs(events_path, quotes_path)
+    if not data_audit["valid"]:
+        raise ValueError(f"input data audit failed: {data_audit}")
+    (output_dir / "data_audit.json").write_text(
+        json.dumps(data_audit, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     experiment = run_experiment(
         quotes_path, events_path, output_dir / "experiment0", min_final_move_bps=2.0
     )
@@ -155,6 +241,7 @@ def run_phase0(
     summary: dict[str, object] = {
         "phase0_status": "COMPLETE",
         "completed_at_utc": datetime.now(UTC).isoformat(),
+        "data_audit": data_audit,
         "experiment0": experiment,
         "baseline": baseline,
         "gates": {
@@ -193,6 +280,7 @@ def run_phase0(
         "outputs": [
             "phase0_summary.json",
             "PHASE0_REPORT.md",
+            "data_audit.json",
             "experiment0/event_metrics.csv",
             "experiment0/summary.json",
             "experiment0/arrival_curve.svg",

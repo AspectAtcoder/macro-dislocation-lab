@@ -69,12 +69,14 @@ def event_metrics(
     min_final_move_bps: float = 2.0,
 ) -> list[dict[str, str | float | int]]:
     baseline = points["t0"]
+    event_time = datetime.fromisoformat(event["release_timestamp_utc"]).astimezone(UTC)
     final = points[f"h{final_horizon}"]
     final_return = _return_bps(baseline.mid, final.mid)
     denominator_ok = abs(final_return) >= min_final_move_bps
     rows: list[dict[str, str | float | int]] = []
     for horizon in HORIZONS:
         quote = points[f"h{horizon}"]
+        target_time = event_time + timedelta(seconds=horizon)
         cumulative = _return_bps(baseline.mid, quote.mid)
         residual = _return_bps(quote.mid, final.mid)
         raw_arrival = cumulative / final_return if denominator_ok else math.nan
@@ -99,6 +101,11 @@ def event_metrics(
                 "event_type": event["event_type"],
                 "release_timestamp_utc": event["release_timestamp_utc"],
                 "horizon_seconds": horizon,
+                "baseline_quote_timestamp_utc": baseline.timestamp_utc.isoformat(),
+                "baseline_lead_ms": (event_time - baseline.timestamp_utc).total_seconds()
+                * 1_000.0,
+                "horizon_quote_timestamp_utc": quote.timestamp_utc.isoformat(),
+                "horizon_lag_ms": (quote.timestamp_utc - target_time).total_seconds() * 1_000.0,
                 "baseline_mid": baseline.mid,
                 "horizon_mid": quote.mid,
                 "final_mid": final.mid,
@@ -180,6 +187,9 @@ def summarize(rows: list[dict[str, str | float | int]]) -> dict[str, object]:
     all_over_95 = bool(five_minute) and all(
         float(item["median_completion_pct"]) >= 95.0 for item in five_minute
     )
+    baseline_rows = [row for row in rows if int(row["horizon_seconds"]) == HORIZONS[0]]
+    horizon_lags = [float(row["horizon_lag_ms"]) for row in rows]
+    baseline_leads = [float(row["baseline_lead_ms"]) for row in baseline_rows]
     return {
         "definition": {
             "final_horizon_seconds": 3600,
@@ -195,6 +205,17 @@ def summarize(rows: list[dict[str, str | float | int]]) -> dict[str, object]:
                 if all_over_95
                 else "At least one event type retains a descriptive post-5-minute residual. Statistical validation is still required."
             ),
+        },
+        "data_quality": {
+            "median_horizon_quote_lag_ms": statistics.median(horizon_lags)
+            if horizon_lags
+            else None,
+            "max_horizon_quote_lag_ms": max(horizon_lags) if horizon_lags else None,
+            "median_baseline_quote_lead_ms": statistics.median(baseline_leads)
+            if baseline_leads
+            else None,
+            "max_baseline_quote_lead_ms": max(baseline_leads) if baseline_leads else None,
+            "selection_tolerance_ms": 10_000,
         },
     }
 
