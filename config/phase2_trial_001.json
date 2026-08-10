@@ -1,0 +1,66 @@
+{
+  "trial_id": "phase2_trial_001",
+  "registered_at": "2026-08-10T00:00:00+09:00",
+  "purpose": "Validate the point-in-time calendar data contract and event-bundle layer before any new price experiment.",
+  "hypothesis": "A fail-closed contract can accept licensed pre/post-release vintages, merge simultaneous components, attach official-document features, and reject the existing research calendar because its consensus vintage and rights are not proven.",
+  "inputs": {
+    "research_calendar": "data/processed/events_2024.csv",
+    "phase1_documents": "artifacts/phase1_complete/documents.json",
+    "phase1_fomc_features": "artifacts/phase1_complete/fomc_features.csv",
+    "phase1_eia_features": "artifacts/phase1_complete/eia_features.csv",
+    "contract": "config/pit_event_contract.json"
+  },
+  "scope": {
+    "research_calendar_bundles": 24,
+    "research_calendar_components": 60,
+    "fomc_official_feature_bundles": 24,
+    "eia_official_feature_bundles": 52,
+    "minimum_total_bundles": 100,
+    "allowed_data_contract_trials": 1,
+    "allowed_price_model_trials": 0
+  },
+  "expected_negative_control": {
+    "source": "Forex Factory research cache normalized with official BLS times",
+    "expected_price_eligible_components": 0,
+    "required_failures": [
+      "missing_pre_release_snapshot_at",
+      "unproven_consensus_vintage",
+      "research_only_or_unknown_rights"
+    ],
+    "interpretation": "Rejecting all rows is a successful leak-prevention test, not a failure to parse the file."
+  },
+  "vendor_preflight": {
+    "provider": "Trading Economics",
+    "credential_environment_variable": "TRADING_ECONOMICS_API_KEY",
+    "guest_endpoint_expected_status": 410,
+    "official_capability_required": "Economic Calendar Point-in-Time",
+    "authenticated_download_required_for_price_trial": true
+  },
+  "completion_gates": {
+    "contract_schema_valid": true,
+    "research_calendar_bundles": 24,
+    "research_calendar_components": 60,
+    "research_price_eligible_components": 0,
+    "official_feature_bundles_minimum": 74,
+    "total_bundles_minimum": 100,
+    "simultaneous_components_bundled": true,
+    "pre_post_vintage_unit_test": true,
+    "revision_preserved_unit_test": true,
+    "deterministic_bundle_hash": true,
+    "required_test_count": 32,
+    "price_model_executed": false,
+    "market_price_join_executed": false
+  },
+  "decision_rule": {
+    "READY_FOR_LICENSED_VENDOR_INGESTION": "All pipeline gates pass and the negative control is rejected exactly as registered.",
+    "FAIL_DATA_CONTRACT": "Any invalid or unlicensed component becomes price-eligible, a revision overwrites a prior vintage, simultaneous releases split, hashes drift, or a registered count/test gate fails."
+  },
+  "economic_decision": "Even if the pipeline passes, the next price trial remains NO_GO until licensed authenticated point-in-time snapshots and retention/ML rights are supplied.",
+  "out_of_scope": [
+    "price prediction",
+    "market-price joining",
+    "parameter fitting",
+    "vendor subscription purchase",
+    "using documentation examples as empirical data"
+  ]
+}

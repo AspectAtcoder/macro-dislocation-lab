@@ -1,0 +1,47 @@
+{
+  "schema_version": "pit_event_component_v1",
+  "description": "Append-only snapshots for one released component. A training row requires a pre-release consensus vintage and a post-release actual vintage.",
+  "required_fields": [
+    "provider",
+    "provider_event_id",
+    "event_type",
+    "component",
+    "country",
+    "currency",
+    "scheduled_at",
+    "reference_period",
+    "unit",
+    "snapshot_at",
+    "received_at",
+    "actual",
+    "consensus",
+    "previous",
+    "revised",
+    "source_url",
+    "license_class",
+    "rights_profile",
+    "payload_sha256"
+  ],
+  "rights_required_for_research": [
+    "retention",
+    "historical_backtesting",
+    "machine_learning",
+    "derived_data"
+  ],
+  "eligibility_rules": {
+    "pre_release_consensus": "At least one snapshot_at strictly before scheduled_at has a non-null consensus.",
+    "post_release_actual": "At least one snapshot_at at or after scheduled_at has a non-null actual.",
+    "stable_identity": "provider_event_id, component, scheduled_at and reference_period do not change across snapshots.",
+    "append_only": "A duplicate payload is an observation; changed values require a new snapshot and may not overwrite an earlier vintage.",
+    "rights": "Every required right is explicitly true; unknown is failure.",
+    "time_zone": "All timestamps are offset-aware ISO-8601 and normalized to UTC for bundling.",
+    "simultaneous_release": "All components sharing country, currency and scheduled_at are one event bundle."
+  },
+  "prohibited_inferences": [
+    "Do not use file modification time as snapshot_at.",
+    "Do not infer a pre-release consensus vintage from a final post-release row.",
+    "Do not replace previous with revised when constructing the pre-release state.",
+    "Do not treat an official archive fetch in 2026 as historical live arrival time.",
+    "Do not allow a research-only or unknown-rights row into a price experiment."
+  ]
+}
