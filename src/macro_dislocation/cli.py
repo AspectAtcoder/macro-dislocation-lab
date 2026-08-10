@@ -10,8 +10,10 @@ from .dukascopy import event_hours, write_quote_csv
 from .experiment import run_experiment
 from .phase0 import run_phase0
 from .phase1 import run_phase1
+from .phase2 import run_phase2
 from .verify import verify_phase0
 from .verify_phase1 import verify_phase1
+from .verify_phase2 import verify_phase2
 
 CONSENSUS_URL = "https://huggingface.co/datasets/Ehsanrs2/Forex_Factory_Calendar"
 
@@ -108,6 +110,36 @@ def _verify_phase1(args: argparse.Namespace) -> None:
         raise SystemExit(1)
 
 
+def _phase2(args: argparse.Namespace) -> None:
+    result = run_phase2(
+        Path(args.specification),
+        Path(args.contract),
+        Path(args.research_calendar),
+        Path(args.phase1_documents),
+        Path(args.fomc_features),
+        Path(args.eia_features),
+        Path(args.output_dir),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase2(args: argparse.Namespace) -> None:
+    result = verify_phase2(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.contract),
+        Path(args.research_calendar),
+        Path(args.phase1_documents),
+        Path(args.fomc_features),
+        Path(args.eia_features),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="macro-lab")
     commands = root.add_subparsers(required=True)
@@ -175,6 +207,28 @@ def parser() -> argparse.ArgumentParser:
     verify1.add_argument("--trial-registry", default="config/trial_registry.csv")
     verify1.add_argument("--project-root", default=".")
     verify1.set_defaults(func=_verify_phase1)
+
+    phase2 = commands.add_parser("phase2-complete")
+    phase2.add_argument("--specification", default="config/phase2_trial_001.json")
+    phase2.add_argument("--contract", default="config/pit_event_contract.json")
+    phase2.add_argument("--research-calendar", default="data/processed/events_2024.csv")
+    phase2.add_argument("--phase1-documents", default="artifacts/phase1_complete/documents.json")
+    phase2.add_argument("--fomc-features", default="artifacts/phase1_complete/fomc_features.csv")
+    phase2.add_argument("--eia-features", default="artifacts/phase1_complete/eia_features.csv")
+    phase2.add_argument("--output-dir", default="artifacts/phase2_complete")
+    phase2.set_defaults(func=_phase2)
+
+    verify2 = commands.add_parser("verify-phase2")
+    verify2.add_argument("--output-dir", default="artifacts/phase2_complete")
+    verify2.add_argument("--specification", default="config/phase2_trial_001.json")
+    verify2.add_argument("--contract", default="config/pit_event_contract.json")
+    verify2.add_argument("--research-calendar", default="data/processed/events_2024.csv")
+    verify2.add_argument("--phase1-documents", default="artifacts/phase1_complete/documents.json")
+    verify2.add_argument("--fomc-features", default="artifacts/phase1_complete/fomc_features.csv")
+    verify2.add_argument("--eia-features", default="artifacts/phase1_complete/eia_features.csv")
+    verify2.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify2.add_argument("--project-root", default=".")
+    verify2.set_defaults(func=_verify_phase2)
     return root
 
 
