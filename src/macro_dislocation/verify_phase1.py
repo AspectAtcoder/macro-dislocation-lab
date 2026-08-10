@@ -44,6 +44,17 @@ def _run_tests(project_root: Path) -> dict[str, Any]:
     }
 
 
+def _git_blob_hash(project_root: Path, commit: str, relative_path: str) -> str | None:
+    process = subprocess.run(
+        ["git", "show", f"{commit}:{relative_path}"],
+        cwd=project_root,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    return hashlib.sha256(process.stdout).hexdigest() if process.returncode == 0 else None
+
+
 def verify_phase1(
     output_dir: Path,
     store_path: Path,
@@ -85,6 +96,7 @@ def verify_phase1(
     with trial_registry_path.open(newline="", encoding="utf-8") as handle:
         trials = list(csv.DictReader(handle))
     matching = [row for row in trials if row["trial_id"] == specification["trial_id"]]
+    registered_commit = matching[0]["registered_commit"] if len(matching) == 1 else ""
     hash_checks: dict[str, bool] = {}
     for raw_path, expected in manifest["inputs"].items():
         path = Path(raw_path)
@@ -117,6 +129,14 @@ def verify_phase1(
         "one_registered_trial": len(matching) == 1,
         "registered_commit_matches": len(matching) == 1
         and matching[0]["registered_commit"] == "f00970a",
+        "preregistered_spec_matches": _git_blob_hash(
+            project_root, registered_commit, "config/phase1_trial_001.json"
+        )
+        == _sha256(specification_path),
+        "preregistered_axes_match": _git_blob_hash(
+            project_root, registered_commit, "config/event_axes.json"
+        )
+        == _sha256(axes_path),
         "all_input_hashes_match": all(hash_checks.values()),
         "tests_pass": tests["passed"],
         "minimum_test_count": tests["count"] >= gates["required_test_count"],
@@ -139,4 +159,25 @@ def verify_phase1(
         json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+    if result["passed"]:
+        summary["phase1_status"] = "COMPLETE"
+        summary["pipeline_status"] = "PASS_PIPELINE_ONLY"
+        summary["verification"] = {
+            "passed": True,
+            "test_count": tests["count"],
+            "decision": result["decision"],
+        }
+        (output_dir / "phase1_summary.json").write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        report_path = output_dir / "PHASE1_REPORT.md"
+        report = report_path.read_text(encoding="utf-8")
+        report = report.replace(
+            "PASS_PIPELINE_PENDING_TEST_VERIFICATION", "PASS_PIPELINE_ONLY"
+        ).replace(
+            "テスト数を含む最終完了判定は `macro-lab verify-phase1` が行います。",
+            f"最終verifierは全項目PASS（テスト{tests['count']}件）です。",
+        )
+        report_path.write_text(report, encoding="utf-8")
     return result

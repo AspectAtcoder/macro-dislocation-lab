@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "macro-dislocation-lab"
-version = "0.1.0"
-description = "Phase-0 feasibility tests for post-announcement FX price dislocations"
+version = "0.2.0"
+description = "Point-in-time macro release ingestion and post-announcement dislocation research"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}

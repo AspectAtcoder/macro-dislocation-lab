@@ -61,3 +61,17 @@ source event ID and content hash. No current page may overwrite an earlier vinta
 Generic news aggregators, search-result scraping and social-media scraping are not
 primary trade inputs because their latency, completeness, revision history and
 rights are not controlled.
+
+## Phase 1 execution result
+
+On 2026-08-10 the official-source path was exercised against real archives, not
+fixtures. It acquired 24 Federal Reserve FOMC statements from 2022–2024 and 52 EIA
+WPSR issue-specific CSV files from 2024. A second network acquisition added 76
+observations but zero document versions, and the extracted feature hash was
+identical.
+
+BLS and OPEC returned HTTP 403 from this execution environment, so they remain
+catalogued but were not counted toward the Phase 1 gate. No blocking or bot-control
+bypass was attempted. Trading Economics, LSEG and Bloomberg remain uncontracted;
+therefore consensus vintages, real delivery timestamps and content/ML rights are
+still a hard prerequisite for a price-feature trial.

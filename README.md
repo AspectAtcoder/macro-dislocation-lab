@@ -1,7 +1,8 @@
 # Macro Dislocation Lab
 
-イベント直後のジャンプを取りに行くのではなく、ジャンプ後に残るドリフト／反転が
-USD/JPYで観測・取引可能かを先に判定するためのPhase 0リポジトリです。
+イベント直後のジャンプを取りに行くのではなく、ジャンプ後に残るドリフト／反転と、
+それを検証するためのpoint-in-timeニュース／公式文書基盤を段階的に評価する
+リポジトリです。
 
 ## 仮説と制約
 
@@ -22,6 +23,18 @@ Phase 0は2026-08-10に完了しました。登録済み3特徴Ridgeモデルは
 方向一致50%、コスト控除後中央値-3.00bpとなり、現行数値仕様は**No-Go**です。
 残余値幅の存在と予測可能性は別である、という結果です。詳細は
 [Phase 0 result](docs/PHASE0_RESULT.md)を参照してください。
+
+## Phase 1 status
+
+Phase 1は2026-08-10に **PASS_PIPELINE_ONLY** で完了しました。Fed FOMC声明24件と
+EIA WPSR 52件を公式アーカイブから2回取得し、document vintageは76件のまま、
+observationだけが154件へ増えることを確認しました。固定6軸とEIA構造化特徴の再生hashは
+一致し、25テストと最終verifierが全項目PASSです。
+
+これは取得・版管理・再現性のGoであり、価格予測のGoではありません。consensusと
+ベンダー実配信時刻を含むpoint-in-time履歴は未契約です。詳細は
+[Phase 1 result](docs/PHASE1_RESULT.md)と
+[Phase 1 protocol](docs/PHASE1_PROTOCOL.md)を参照してください。
 
 ## Experiment 0
 
@@ -69,11 +82,18 @@ macro-lab phase0-complete
 # 7. 入力ハッシュ・試行回数・成果物・判定の完了監査
 macro-lab verify-phase0
 
+# Phase 1: 公式アーカイブを取得し、immutable storeと低次元特徴を生成
+macro-lab phase1-complete
+
+# Phase 1: 事前登録・blob hash・再生hash・テストを最終監査
+macro-lab verify-phase1
+
 # テスト
 python -m unittest discover -s tests -v
 ```
 
-最終生成物は `artifacts/phase0_complete_2024/` のCSV、JSON、Markdown、SVGです。
+生成物は `artifacts/phase0_complete_2024/` と `artifacts/phase1_complete/` の
+CSV、JSON、Markdown、SVGです。
 生データ・処理済み相場データ・生成物はGit管理外です。
 
 ## リポジトリ規律
