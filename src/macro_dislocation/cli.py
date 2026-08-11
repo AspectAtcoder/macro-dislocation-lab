@@ -14,6 +14,14 @@ from .phase0 import run_phase0
 from .phase1 import run_phase1
 from .phase2 import run_phase2
 from .phase3 import run_phase3
+from .phase4 import run_phase4
+from .shadow_campaign import (
+    ShadowTraceStore,
+    audit_shadow_trace,
+    build_release_plans,
+    create_trace_event,
+    query_ntp_clock_sample,
+)
 from .vendor_capture import (
     VendorCaptureStore,
     capture_authenticated_snapshot,
@@ -23,6 +31,7 @@ from .verify import verify_phase0
 from .verify_phase1 import verify_phase1
 from .verify_phase2 import verify_phase2
 from .verify_phase3 import verify_phase3
+from .verify_phase4 import verify_phase4
 
 CONSENSUS_URL = "https://huggingface.co/datasets/Ehsanrs2/Forex_Factory_Calendar"
 
@@ -216,6 +225,91 @@ def _capture_te_stream_jsonl(args: argparse.Namespace) -> None:
     )
 
 
+def _phase4(args: argparse.Namespace) -> None:
+    result = run_phase4(
+        Path(args.specification),
+        Path(args.campaign_contract),
+        Path(args.capture_contract),
+        Path(args.schedule),
+        Path(args.trace),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase4(args: argparse.Namespace) -> None:
+    result = verify_phase4(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.campaign_contract),
+        Path(args.capture_contract),
+        Path(args.schedule),
+        Path(args.trace),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
+def _shadow_plan(args: argparse.Namespace) -> None:
+    specification = json.loads(Path(args.specification).read_text(encoding="utf-8"))
+    plans = build_release_plans(Path(args.schedule), specification["policy"])
+    value = [plan.to_dict() for plan in plans]
+    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.output).write_text(
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps(value, ensure_ascii=False, indent=2))
+
+
+def _shadow_clock_sample(args: argparse.Namespace) -> None:
+    event = query_ntp_clock_sample(
+        args.server,
+        run_id=args.run_id,
+        plan_id=args.plan_id,
+        timeout=args.timeout,
+    )
+    stored = ShadowTraceStore(Path(args.trace_store)).append(event)
+    print(json.dumps(stored, ensure_ascii=False, indent=2))
+
+
+def _record_shadow_event(args: argparse.Namespace) -> None:
+    details = json.loads(Path(args.details_file).read_text(encoding="utf-8"))
+    if not isinstance(details, dict):
+        raise SystemExit("details file must contain one JSON object")
+    event = create_trace_event(
+        run_id=args.run_id,
+        plan_id=args.plan_id,
+        kind=args.kind,
+        details=details,
+    )
+    stored = ShadowTraceStore(Path(args.trace_store)).append(event)
+    print(json.dumps(stored, ensure_ascii=False, indent=2))
+
+
+def _audit_shadow_run(args: argparse.Namespace) -> None:
+    specification = json.loads(Path(args.specification).read_text(encoding="utf-8"))
+    plans = build_release_plans(Path(args.schedule), specification["policy"])
+    matching = [plan for plan in plans if plan.plan_id == args.plan_id]
+    if len(matching) != 1:
+        raise SystemExit(f"plan_id must identify exactly one plan: {args.plan_id}")
+    audit = audit_shadow_trace(
+        matching[0],
+        ShadowTraceStore(Path(args.trace_store)).events(),
+        specification["policy"],
+    )
+    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.output).write_text(
+        json.dumps(audit, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps(audit, ensure_ascii=False, indent=2))
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="macro-lab")
     commands = root.add_subparsers(required=True)
@@ -344,6 +438,69 @@ def parser() -> argparse.ArgumentParser:
         "--endpoint", default="wss://stream.tradingeconomics.com/"
     )
     te_stream.set_defaults(func=_capture_te_stream_jsonl)
+
+    phase4 = commands.add_parser("phase4-complete")
+    phase4.add_argument("--specification", default="config/phase4_trial_001.json")
+    phase4.add_argument(
+        "--campaign-contract", default="config/shadow_campaign_contract.json"
+    )
+    phase4.add_argument(
+        "--capture-contract", default="config/vendor_capture_contract.json"
+    )
+    phase4.add_argument(
+        "--schedule", default="tests/fixtures/shadow_release_schedule.json"
+    )
+    phase4.add_argument("--trace", default="tests/fixtures/shadow_trace_pass.json")
+    phase4.add_argument("--output-dir", default="artifacts/phase4_complete")
+    phase4.add_argument("--project-root", default=".")
+    phase4.set_defaults(func=_phase4)
+
+    verify4 = commands.add_parser("verify-phase4")
+    verify4.add_argument("--output-dir", default="artifacts/phase4_complete")
+    verify4.add_argument("--specification", default="config/phase4_trial_001.json")
+    verify4.add_argument(
+        "--campaign-contract", default="config/shadow_campaign_contract.json"
+    )
+    verify4.add_argument(
+        "--capture-contract", default="config/vendor_capture_contract.json"
+    )
+    verify4.add_argument(
+        "--schedule", default="tests/fixtures/shadow_release_schedule.json"
+    )
+    verify4.add_argument("--trace", default="tests/fixtures/shadow_trace_pass.json")
+    verify4.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify4.add_argument("--project-root", default=".")
+    verify4.set_defaults(func=_verify_phase4)
+
+    shadow_plan = commands.add_parser("plan-shadow-window")
+    shadow_plan.add_argument("--schedule", required=True)
+    shadow_plan.add_argument("--specification", default="config/phase4_trial_001.json")
+    shadow_plan.add_argument("--output", required=True)
+    shadow_plan.set_defaults(func=_shadow_plan)
+
+    clock_sample = commands.add_parser("record-shadow-clock-sample")
+    clock_sample.add_argument("--server", required=True)
+    clock_sample.add_argument("--run-id", required=True)
+    clock_sample.add_argument("--plan-id", required=True)
+    clock_sample.add_argument("--trace-store", required=True)
+    clock_sample.add_argument("--timeout", type=float, default=2.0)
+    clock_sample.set_defaults(func=_shadow_clock_sample)
+
+    shadow_event = commands.add_parser("record-shadow-event")
+    shadow_event.add_argument("--run-id", required=True)
+    shadow_event.add_argument("--plan-id", required=True)
+    shadow_event.add_argument("--kind", required=True)
+    shadow_event.add_argument("--details-file", required=True)
+    shadow_event.add_argument("--trace-store", required=True)
+    shadow_event.set_defaults(func=_record_shadow_event)
+
+    shadow_audit = commands.add_parser("audit-shadow-run")
+    shadow_audit.add_argument("--schedule", required=True)
+    shadow_audit.add_argument("--trace-store", required=True)
+    shadow_audit.add_argument("--plan-id", required=True)
+    shadow_audit.add_argument("--specification", default="config/phase4_trial_001.json")
+    shadow_audit.add_argument("--output", required=True)
+    shadow_audit.set_defaults(func=_audit_shadow_run)
     return root
 
 

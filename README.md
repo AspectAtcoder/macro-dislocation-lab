@@ -62,6 +62,20 @@ hash一致、二重時計の分離、5 failure injection、全53テストがPASS
 [Phase 3 protocol](docs/PHASE3_PROTOCOL.md)、
 [vendor capture runbook](docs/VENDOR_CAPTURE_RUNBOOK.md)を参照してください。
 
+## Phase 4 status
+
+Phase 4は2026-08-11に **READY_TO_START_LICENSED_SHADOW_CAMPAIGN** で完了しました。
+schedule hash、named-zone DST変換、3 clock sample、pre-release snapshot、stream
+heartbeat／reconnect、同時発表component、raw-store auditを1つのrelease-window gateへ
+統合しました。
+
+登録済みsynthetic traceは20 event・2 component・1 reconnectでcomplete、6 failure
+injectionはすべてfail-closed、全74テストがPASSしました。実shadow windowは0件なので
+campaignは未昇格、価格実験もNo-Goです。詳細は
+[Phase 4 result](docs/PHASE4_RESULT.md)、
+[Phase 4 protocol](docs/PHASE4_PROTOCOL.md)、
+[shadow campaign runbook](docs/SHADOW_CAMPAIGN_RUNBOOK.md)を参照してください。
+
 ## Experiment 0
 
 発表直前の最後の気配を基準に、+1秒、+5秒、+30秒、+1分、+5分、+15分、
@@ -126,12 +140,19 @@ macro-lab phase3-complete
 # Phase 3: preregistration、raw blob、replay hash、テストを監査
 macro-lab verify-phase3
 
+# Phase 4: release-window supervisorとoffline failure injectionを実行
+macro-lab phase4-complete
+
+# Phase 4: schedule、append-only trace、audit hash、campaign gateを監査
+macro-lab verify-phase4
+
 # テスト
 python -m unittest discover -s tests -v
 ```
 
 生成物は `artifacts/phase0_complete_2024/`、`artifacts/phase1_complete/`、
-`artifacts/phase2_complete/`、`artifacts/phase3_complete/` のCSV、JSON、
+`artifacts/phase2_complete/`、`artifacts/phase3_complete/`、
+`artifacts/phase4_complete/` のCSV、JSON、
 Markdown、SVGです。
 生データ・処理済み相場データ・生成物はGit管理外です。
 
