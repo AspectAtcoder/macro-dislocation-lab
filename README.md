@@ -90,6 +90,20 @@ No-Goです。詳細は[Phase 5 result](docs/PHASE5_RESULT.md)、
 [Phase 5 protocol](docs/PHASE5_PROTOCOL.md)、
 [evidence enrollment runbook](docs/EVIDENCE_ENROLLMENT_RUNBOOK.md)を参照してください。
 
+## Phase 6 status
+
+Phase 6は2026-08-11に **READY_FOR_CAMPAIGN_ACTIVATION_PENDING_VENDOR_ACCESS** で
+完了しました。BLS公式ページから次のCPI 3件・雇用統計3件を固定し、48時間以内の
+日程再確認、24時間前のaccess-ready期限、`America/New_York`によるDST変換を
+activation packetへ統合しました。
+
+凍結時点の候補は8月12日CPI 1件ですが、credentialと承認済みrights attestationが
+ないためfail-closedでブロックされています。6 failure injectionと全105テストがPASSし、
+実capture、価格結合、モデル学習はいずれも0件です。詳細は
+[Phase 6 result](docs/PHASE6_RESULT.md)、
+[Phase 6 protocol](docs/PHASE6_PROTOCOL.md)、
+[campaign activation runbook](docs/CAMPAIGN_ACTIVATION_RUNBOOK.md)を参照してください。
+
 ## Experiment 0
 
 発表直前の最後の気配を基準に、+1秒、+5秒、+30秒、+1分、+5分、+15分、
@@ -166,13 +180,23 @@ macro-lab phase5-complete
 # Phase 5: preregistration、raw replay、package hash、ledger gateを監査
 macro-lab verify-phase5
 
+# Phase 6: BLS公式6枠を正規化し、activation gateを実行
+macro-lab phase6-complete
+
+# Phase 6: preregistration、roster hash、DST、失敗注入を監査
+macro-lab verify-phase6
+
+# 現在時刻で、認証情報を表示せず次の候補状態を確認
+macro-lab campaign-roster-status
+
 # テスト
 python -m unittest discover -s tests -v
 ```
 
 生成物は `artifacts/phase0_complete_2024/`、`artifacts/phase1_complete/`、
 `artifacts/phase2_complete/`、`artifacts/phase3_complete/`、
-`artifacts/phase4_complete/`、`artifacts/phase5_complete/` のCSV、JSON、
+`artifacts/phase4_complete/`、`artifacts/phase5_complete/`、
+`artifacts/phase6_complete/` のCSV、JSON、
 Markdown、SVGです。
 生データ・処理済み相場データ・生成物はGit管理外です。
 
