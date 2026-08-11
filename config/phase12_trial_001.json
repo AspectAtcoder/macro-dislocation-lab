@@ -1,0 +1,43 @@
+{
+  "trial_id": "phase12_trial_001",
+  "registered_at": "2026-08-11T14:09:10+00:00",
+  "purpose": "Build a two-stage forward-test journal that records paper signals before outcomes and settles them later under a fail-closed risk gate.",
+  "inputs": {
+    "phase11_specification": "config/phase11_trial_001.json",
+    "synthetic_events": "config/phase10_synthetic_events.csv"
+  },
+  "dataset_role": "forward",
+  "mode": "paper_only",
+  "policy": {
+    "maximum_open_positions": 1,
+    "maximum_spread_bp": 8.0,
+    "maximum_quote_age_seconds": 2.0,
+    "daily_loss_limit_bp": 40.0,
+    "signal_expiry_seconds": 5,
+    "kill_switch_default": true,
+    "minimum_prospective_settled_events_for_edge_review": 30,
+    "minimum_elapsed_months_for_edge_review": 6,
+    "live_orders_allowed": false
+  },
+  "failure_injections": {
+    "kill_switch": "kill_switch_active",
+    "stale_quote": "forward_quote_stale",
+    "wide_spread": "forward_spread_too_wide",
+    "position_limit": "forward_position_limit",
+    "early_settlement": "forward_settlement_too_early",
+    "outcome_at_signal": "forward_outcome_leakage",
+    "journal_tamper": "forward_event_hash_mismatch",
+    "daily_loss_limit": "daily_loss_limit_reached"
+  },
+  "completion_gates": {
+    "synthetic_forward_signals": 12,
+    "synthetic_forward_settlements": 12,
+    "prospective_forward_signals": 0,
+    "prospective_forward_settlements": 0,
+    "live_orders": 0,
+    "failure_injections": 8,
+    "required_test_count": 175
+  },
+  "decision": "IMPLEMENTATION_COMPLETE_WAITING_FOR_PROSPECTIVE_FORWARD_EVIDENCE",
+  "economic_decision": "The forward harness is operationally testable now, but edge review remains blocked until at least 30 prospectively settled real events and six elapsed months."
+}

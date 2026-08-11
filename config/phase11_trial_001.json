@@ -1,0 +1,55 @@
+{
+  "trial_id": "phase11_trial_001",
+  "registered_at": "2026-08-11T14:09:10+00:00",
+  "purpose": "Run exactly one expanding-window Ridge backtest with five frozen features and event-time bid/ask plus dynamic slippage.",
+  "inputs": {
+    "phase10_specification": "config/phase10_trial_001.json",
+    "synthetic_events": "config/phase10_synthetic_events.csv"
+  },
+  "dataset_role": "backtest",
+  "target_horizon_seconds": 900,
+  "features": [
+    "headline_surprise",
+    "revision_surprise",
+    "internal_breadth",
+    "regime_score",
+    "pre_volatility_bp"
+  ],
+  "model": {
+    "family": "ridge_linear_regression",
+    "alpha": 1.0,
+    "maximum_features": 5,
+    "initial_train_events": 12,
+    "walk_forward": "expanding_one_step",
+    "hyperparameter_search": false,
+    "trials_allowed": 1,
+    "trade_threshold_bp": 2.0
+  },
+  "governance": {
+    "transform_fit_on_past_only": true,
+    "simultaneous_bundle_is_one_sample": true,
+    "record_trial_before_fit": true,
+    "deflated_sharpe_required": true,
+    "minimum_empirical_oos_events_for_edge_claim": 50
+  },
+  "failure_injections": {
+    "sixth_feature": "feature_limit_exceeded",
+    "future_fit_row": "walk_forward_leakage",
+    "unregistered_trial": "trial_not_registered",
+    "duplicate_prediction": "duplicate_oos_prediction",
+    "constant_cost": "constant_cost_forbidden",
+    "forward_role_leak": "dataset_role_leakage"
+  },
+  "completion_gates": {
+    "trials_run": 1,
+    "features": 5,
+    "training_events_initial": 12,
+    "oos_predictions": 12,
+    "synthetic_oos_predictions": 12,
+    "empirical_oos_predictions": 0,
+    "failure_injections": 6,
+    "required_test_count": 165
+  },
+  "decision": "BACKTEST_IMPLEMENTED_EMPIRICAL_DATA_REQUIRED",
+  "economic_decision": "No performance statistic from the synthetic registered run may be used to claim an edge or size capital."
+}
