@@ -1,0 +1,80 @@
+{
+  "trial_id": "phase6_trial_001",
+  "registered_at": "2026-08-11T19:08:18+09:00",
+  "evaluated_at": "2026-08-11T10:08:18+00:00",
+  "purpose": "Freeze the next three CPI and three Employment Situation release windows from official BLS schedules and compute a fail-closed activation packet before licensed shadow capture.",
+  "hypothesis": "A deterministic roster can preserve official dates, handle the November daylight-saving transition, identify the single currently activatable window, and block it when credential and rights inputs are absent without counting a missed window as evidence.",
+  "inputs": {
+    "roster_contract": "config/campaign_roster_contract.json",
+    "campaign_roster": "config/phase6_campaign_roster_001.json",
+    "phase5_specification": "config/phase5_trial_001.json"
+  },
+  "scope": {
+    "allowed_roster_trials": 1,
+    "campaign_windows": 6,
+    "cpi_windows": 3,
+    "nfp_windows": 3,
+    "activation_candidates_at_evaluation": 1,
+    "empirical_windows_captured": 0,
+    "allowed_authenticated_vendor_requests": 0,
+    "allowed_market_price_joins": 0,
+    "allowed_price_model_trials": 0
+  },
+  "policy": {
+    "minimum_campaign_windows": 6,
+    "minimum_cpi_windows": 3,
+    "minimum_nfp_windows": 3,
+    "schedule_refresh_window_seconds": 172800,
+    "access_ready_lead_seconds": 86400,
+    "rehearsal_lead_seconds": 7200,
+    "operator_timezone": "Asia/Tokyo",
+    "trusted_source_hosts": ["www.bls.gov"]
+  },
+  "failure_injections": {
+    "fixed_offset_dst": "utc_conversion_mismatch",
+    "duplicate_release": "duplicate_release_window",
+    "missing_cpi_floor": "family_floor_not_met",
+    "insecure_source": "untrusted_schedule_source",
+    "stale_activation_schedule": "schedule_refresh_required",
+    "activation_after_release": "release_window_expired"
+  },
+  "completion_gates": {
+    "roster_contract_schema_valid": true,
+    "campaign_windows": 6,
+    "cpi_windows": 3,
+    "nfp_windows": 3,
+    "activation_candidates": 1,
+    "next_event_family": "CPI",
+    "next_release_utc": "2026-08-12T12:30:00+00:00",
+    "next_release_jst": "2026-08-12T21:30:00+09:00",
+    "november_nfp_utc": "2026-11-06T13:30:00+00:00",
+    "seconds_to_access_deadline": 8502,
+    "schedule_fresh_for_next_window": true,
+    "activation_status": "BLOCKED_VENDOR_ACCESS",
+    "credential_present": false,
+    "rights_attestation_present": false,
+    "empirical_windows_captured": 0,
+    "all_failure_injections_rejected": true,
+    "deterministic_roster_hash": true,
+    "required_test_count": 102,
+    "authenticated_vendor_request_executed": false,
+    "market_price_join_executed": false,
+    "price_model_executed": false
+  },
+  "decision_rule": {
+    "READY_FOR_CAMPAIGN_ACTIVATION_PENDING_VENDOR_ACCESS": "The official six-window roster, DST conversion, activation deadlines and failure injections pass exactly as preregistered.",
+    "FAIL_CAMPAIGN_ROSTER": "A source, date, timezone, family floor, freshness, expiry, preregistration or test gate fails.",
+    "CAPTURE_WINDOW": "Reserved for a future live run whose credential, rights, fresh official schedule and Phase 3-5 stores all pass before release."
+  },
+  "external_status": "BLOCKED_VENDOR_ACCESS",
+  "economic_decision": "The roster authorizes no historical reconstruction, price join, model fitting or trading. Only prospectively captured and enrolled windows may advance.",
+  "out_of_scope": [
+    "opening an authenticated connection without user-supplied credentials and written rights",
+    "treating the normalized roster as an empirical observation",
+    "backfilling a missed release as a live receipt",
+    "market-price joining",
+    "price prediction",
+    "parameter fitting",
+    "live order generation"
+  ]
+}

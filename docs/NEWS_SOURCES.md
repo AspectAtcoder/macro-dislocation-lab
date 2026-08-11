@@ -135,3 +135,17 @@ The completed Phase 5 trial used only original synthetic payloads. No credential
 rights attestation, authenticated request, empirical window or market-price join
 was present. Production use remains conditional on the provider contract and the
 runbook's evidence-enrollment gate.
+
+## Phase 6 prospective roster
+
+Phase 6 verified the visible official CPI and Employment Situation schedule pages
+and froze the next three releases from each family. The roster is schedule
+metadata, not news evidence. It is converted with `America/New_York`, versioned by
+SHA-256 and must be rechecked inside 48 hours because BLS updates its calendar as
+needed.
+
+At the registered evaluation time only the August 12 CPI release was inside the
+activation interval. It remained blocked because no Trading Economics credential
+or approved rights attestation was present. No substitute aggregator, historical
+backfill or current-page scrape was counted as a live receipt. See
+`docs/CAMPAIGN_ACTIVATION_RUNBOOK.md` for the operational boundary.

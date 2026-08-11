@@ -5,10 +5,12 @@ import json
 import os
 import sys
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .calendar_data import load_event_times, normalize_calendar
 from .baseline import run_baseline
+from .campaign_roster import campaign_readiness, load_campaign_roster
 from .dukascopy import event_hours, write_quote_csv
 from .experiment import run_experiment
 from .evidence_enrollment import (
@@ -23,6 +25,7 @@ from .phase2 import run_phase2
 from .phase3 import run_phase3
 from .phase4 import run_phase4
 from .phase5 import run_phase5
+from .phase6 import run_phase6
 from .shadow_campaign import (
     ShadowTraceStore,
     audit_shadow_trace,
@@ -41,6 +44,7 @@ from .verify_phase2 import verify_phase2
 from .verify_phase3 import verify_phase3
 from .verify_phase4 import verify_phase4
 from .verify_phase5 import verify_phase5
+from .verify_phase6 import verify_phase6
 
 CONSENSUS_URL = "https://huggingface.co/datasets/Ehsanrs2/Forex_Factory_Calendar"
 
@@ -354,6 +358,52 @@ def _verify_phase5(args: argparse.Namespace) -> None:
         raise SystemExit(1)
 
 
+def _phase6(args: argparse.Namespace) -> None:
+    rights = Path(args.rights_attestation) if args.rights_attestation else None
+    result = run_phase6(
+        Path(args.specification),
+        Path(args.roster_contract),
+        Path(args.roster),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+        rights_attestation_path=rights,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase6(args: argparse.Namespace) -> None:
+    result = verify_phase6(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.roster_contract),
+        Path(args.roster),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
+def _campaign_roster_status(args: argparse.Namespace) -> None:
+    specification = json.loads(Path(args.specification).read_text(encoding="utf-8"))
+    rights = Path(args.rights_attestation) if args.rights_attestation else None
+    preflight = vendor_access_preflight(rights)
+    roster = load_campaign_roster(Path(args.roster), specification["policy"])
+    evaluated_at = args.as_of or datetime.now(timezone.utc).isoformat()
+    result = campaign_readiness(
+        roster, evaluated_at, preflight, specification["policy"]
+    )
+    if args.output:
+        path = Path(args.output)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(
+            json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 def _vendor_preflight(args: argparse.Namespace) -> None:
     path = Path(args.rights_attestation) if args.rights_attestation else None
     result = vendor_access_preflight(path)
@@ -647,6 +697,44 @@ def parser() -> argparse.ArgumentParser:
     verify5.add_argument("--trial-registry", default="config/trial_registry.csv")
     verify5.add_argument("--project-root", default=".")
     verify5.set_defaults(func=_verify_phase5)
+
+    phase6 = commands.add_parser("phase6-complete")
+    phase6.add_argument("--specification", default="config/phase6_trial_001.json")
+    phase6.add_argument(
+        "--roster-contract", default="config/campaign_roster_contract.json"
+    )
+    phase6.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    phase6.add_argument("--rights-attestation")
+    phase6.add_argument("--output-dir", default="artifacts/phase6_complete")
+    phase6.add_argument("--project-root", default=".")
+    phase6.set_defaults(func=_phase6)
+
+    verify6 = commands.add_parser("verify-phase6")
+    verify6.add_argument("--output-dir", default="artifacts/phase6_complete")
+    verify6.add_argument("--specification", default="config/phase6_trial_001.json")
+    verify6.add_argument(
+        "--roster-contract", default="config/campaign_roster_contract.json"
+    )
+    verify6.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    verify6.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify6.add_argument("--project-root", default=".")
+    verify6.set_defaults(func=_verify_phase6)
+
+    roster_status = commands.add_parser("campaign-roster-status")
+    roster_status.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    roster_status.add_argument(
+        "--specification", default="config/phase6_trial_001.json"
+    )
+    roster_status.add_argument("--as-of")
+    roster_status.add_argument("--rights-attestation")
+    roster_status.add_argument("--output")
+    roster_status.set_defaults(func=_campaign_roster_status)
 
     access = commands.add_parser("vendor-access-preflight")
     access.add_argument("--rights-attestation")

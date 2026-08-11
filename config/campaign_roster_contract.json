@@ -1,0 +1,22 @@
+{
+  "schema_version": "prospective_campaign_roster_v1",
+  "description": "Official release roster and activation-readiness rules for the first six licensed CPI/NFP shadow windows.",
+  "required_roster_fields": ["roster_id", "checked_at", "official_timezone", "sources", "events"],
+  "required_event_fields": ["source_event_id", "event_family", "reference_month", "release_local_date", "release_local_time", "expected_logical_components"],
+  "source_rules": {
+    "authority": "CPI and Employment Situation release dates must come from their BLS schedule pages.",
+    "versioning": "Preserve the normalized roster bytes and SHA-256 used for each readiness decision.",
+    "refresh": "Re-check the official page inside the registered activation refresh window because BLS updates the calendar as needed."
+  },
+  "time_rules": {
+    "named_zone": "Convert 08:30 Eastern with America/New_York; fixed UTC offsets are prohibited.",
+    "utc": "Store the converted offset-aware UTC release timestamp.",
+    "operator_timezone": "Display an Asia/Tokyo timestamp for operations without using it as the event identity."
+  },
+  "activation_rules": {
+    "access": "Credential and approved rights must pass before the access-ready deadline.",
+    "schedule": "Only a roster rechecked inside the registered freshness window can activate a release.",
+    "components": "Logical components are planning labels; provider event IDs must be resolved from the licensed pre-release capture before evidence enrollment.",
+    "expiry": "A missed release can never be reconstructed and relabeled as a live shadow window."
+  }
+}
