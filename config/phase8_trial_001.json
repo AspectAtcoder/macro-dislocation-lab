@@ -1,0 +1,82 @@
+{
+  "trial_id": "phase8_trial_001",
+  "registered_at": "2026-08-11T22:41:13+09:00",
+  "evaluated_at": "2026-08-11T13:41:13+00:00",
+  "purpose": "Persist deadline-compliant vendor-access readiness as an environment-keyed HMAC receipt and require action-specific signed permits before authenticated snapshot or stream capture.",
+  "hypothesis": "The first CPI window will fail closed after its access deadline with zero receipts and permits, the next viable NFP window will be identified, and receipt or permit tampering, expiry and action confusion will all be rejected without a network request.",
+  "inputs": {
+    "authorization_contract": "config/capture_authorization_contract.json",
+    "phase6_specification": "config/phase6_trial_001.json",
+    "campaign_roster": "config/phase6_campaign_roster_001.json",
+    "phase4_specification": "config/phase4_trial_001.json",
+    "rights_schema": "config/vendor_rights_attestation.schema.json",
+    "phase7_specification": "config/phase7_trial_001.json"
+  },
+  "scope": {
+    "allowed_authorization_trials": 1,
+    "evaluated_windows": 1,
+    "access_receipts_issued": 0,
+    "capture_permits_issued": 0,
+    "missed_windows_counted_as_evidence": 0,
+    "allowed_authenticated_vendor_requests": 0,
+    "allowed_market_price_joins": 0,
+    "allowed_price_model_trials": 0
+  },
+  "policy": {
+    "authorization_key_environment_variable": "MACRO_LAB_AUTHORIZATION_KEY",
+    "minimum_authorization_key_characters": 32,
+    "pre_snapshot_max_age_seconds": 180,
+    "stream_lead_seconds": 120,
+    "stream_tail_seconds": 120,
+    "allowed_actions": ["binding_snapshot", "pre_release_snapshot", "calendar_stream"]
+  },
+  "failure_injections": {
+    "late_authorization": "access_deadline_missed",
+    "missing_signing_key": "missing_authorization_signing_key",
+    "tampered_receipt": "access_receipt_signature_mismatch",
+    "roster_substitution": "access_receipt_roster_mismatch",
+    "expired_receipt": "access_receipt_expired",
+    "wrong_permit_action": "capture_permit_action_mismatch",
+    "tampered_permit": "capture_permit_signature_mismatch",
+    "expired_permit": "capture_permit_expired"
+  },
+  "completion_gates": {
+    "authorization_contract_schema_valid": true,
+    "evaluated_windows": 1,
+    "first_window_status": "MISSED_ACCESS_DEADLINE",
+    "activation_status": "BLOCKED_ACCESS_DEADLINE_MISSED",
+    "seconds_to_access_deadline": -4273,
+    "access_receipts_issued": 0,
+    "capture_permits_issued": 0,
+    "next_viable_source_event_id": "BLS-NFP-2026-08",
+    "next_viable_release_utc": "2026-09-04T12:30:00+00:00",
+    "next_viable_access_ready_by": "2026-09-03T12:30:00+00:00",
+    "credential_present": false,
+    "rights_attestation_present": false,
+    "authorization_signing_key_present": false,
+    "missed_windows_counted_as_evidence": 0,
+    "all_failure_injections_rejected": true,
+    "capture_paths_require_signed_permits": true,
+    "required_test_count": 132,
+    "authenticated_vendor_request_executed": false,
+    "market_price_join_executed": false,
+    "price_model_executed": false
+  },
+  "decision_rule": {
+    "READY_FOR_SIGNED_CAPTURE_AUTHORIZATION_PENDING_EXTERNAL_ACCESS": "Receipt and permit signatures, timing windows, capture enforcement, failure injections and replay verification pass while the missed CPI produces no evidence.",
+    "FAIL_CAPTURE_AUTHORIZATION": "A deadline, signature, roster, action, expiry, preregistration, capture-enforcement or test gate fails unexpectedly.",
+    "AUTHORIZED_CAPTURE": "Reserved for a future window whose access receipt was signed before its deadline with real credential, rights and authorization key."
+  },
+  "external_status": "FIRST_CPI_WINDOW_MISSED_AND_VENDOR_ACCESS_BLOCKED",
+  "economic_decision": "Authorization receipts and permits are operational controls only. They do not establish an edge or authorize a market-price join, model fit or trade.",
+  "out_of_scope": [
+    "reconstructing the missed CPI as a live receipt",
+    "opening an authenticated connection without a signed permit",
+    "persisting vendor or authorization secrets",
+    "counting denied authorization as empirical evidence",
+    "market-price joining",
+    "price prediction",
+    "parameter fitting",
+    "live order generation"
+  ]
+}

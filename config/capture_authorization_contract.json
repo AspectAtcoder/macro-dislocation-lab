@@ -1,0 +1,21 @@
+{
+  "schema_version": "signed_capture_authorization_v1",
+  "description": "HMAC-signed proof that vendor access and rights were ready before the registered deadline, plus short-lived action-specific permits for authenticated capture.",
+  "required_receipt_fields": ["receipt_id", "receipt_status", "roster_id", "roster_sha256", "source_event_id", "event_family", "scheduled_at", "authorized_at", "access_ready_by", "valid_until", "schedule_checked_at", "schedule_source_url", "activation_packet_hash", "rights_attestation_sha256", "license_class", "credential_present", "rights_attestation_valid", "provenance", "receipt_signature"],
+  "required_permit_fields": ["permit_id", "permit_status", "action", "source_event_id", "event_family", "scheduled_at", "issued_at", "not_before", "not_after", "roster_sha256", "access_receipt_id", "access_receipt_signature", "permit_signature"],
+  "allowed_actions": ["binding_snapshot", "pre_release_snapshot", "calendar_stream"],
+  "receipt_rules": {
+    "deadline": "Issue only while the Phase 6 activation packet is READY_FOR_ACTIVATION and authorized_at is at or before access_ready_by.",
+    "rights": "Hash the approved rights attestation bytes and store only credential presence, never credential material.",
+    "signature": "Sign the canonical receipt with HMAC-SHA256 under MACRO_LAB_AUTHORIZATION_KEY; the key is environment-only and at least 32 characters.",
+    "roster": "Bind the exact roster SHA-256, source event, official schedule receipt and activation-packet hash.",
+    "validity": "A valid receipt survives the access-ready deadline but expires after the registered stream tail."
+  },
+  "permit_rules": {
+    "binding_snapshot": "May be issued after access authorization and before release to resolve provider event IDs.",
+    "pre_release_snapshot": "May be issued only inside the registered maximum pre-release snapshot age.",
+    "calendar_stream": "May be issued only inside the registered stream lead and remains valid through the registered stream tail.",
+    "enforcement": "Authenticated snapshot and stream capture functions must validate the action, signature and current time before network or payload processing.",
+    "scope": "Permits authorize capture only and never authorize price joining, model fitting or orders."
+  }
+}
