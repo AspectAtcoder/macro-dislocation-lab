@@ -1,0 +1,76 @@
+{
+  "trial_id": "phase4_trial_001",
+  "registered_at": "2026-08-11T00:00:00+09:00",
+  "purpose": "Validate release-window planning, clock evidence, stream continuity, simultaneous-component completion and campaign promotion gates before licensed shadow collection.",
+  "hypothesis": "A deterministic supervisor can audit one synthetic release window with an explicit reconnect, pass the valid trace, reject six operational failure modes and keep synthetic evidence out of the empirical promotion count.",
+  "inputs": {
+    "campaign_contract": "config/shadow_campaign_contract.json",
+    "capture_contract": "config/vendor_capture_contract.json",
+    "synthetic_schedule": "tests/fixtures/shadow_release_schedule.json",
+    "synthetic_trace": "tests/fixtures/shadow_trace_pass.json"
+  },
+  "scope": {
+    "allowed_campaign_pipeline_trials": 1,
+    "allowed_authenticated_vendor_requests": 0,
+    "synthetic_schedule_bundles": 1,
+    "synthetic_expected_components": 2,
+    "synthetic_trace_events": 20,
+    "synthetic_reconnects": 1,
+    "empirical_shadow_windows": 0,
+    "allowed_price_model_trials": 0
+  },
+  "policy": {
+    "stream_lead_seconds": 120,
+    "pre_snapshot_target_seconds": 60,
+    "pre_snapshot_max_age_seconds": 180,
+    "stream_tail_seconds": 120,
+    "schedule_max_age_seconds": 172800,
+    "minimum_clock_samples": 3,
+    "maximum_clock_offset_ms": 50.0,
+    "maximum_clock_rtt_ms": 200.0,
+    "maximum_telemetry_gap_seconds": 35.0,
+    "maximum_reconnect_gap_seconds": 20.0,
+    "component_completion_seconds": 5.0,
+    "minimum_complete_windows": 6,
+    "minimum_complete_cpi_windows": 3,
+    "minimum_complete_nfp_windows": 3
+  },
+  "failure_injections": {
+    "unsafe_clock": "clock_offset_exceeded",
+    "missing_pre_snapshot": "missing_pre_release_snapshot",
+    "telemetry_gap": "telemetry_gap_exceeded",
+    "schedule_drift": "schedule_hash_mismatch",
+    "missing_component": "missing_release_component",
+    "store_integrity_failure": "raw_store_integrity_failed"
+  },
+  "completion_gates": {
+    "campaign_contract_schema_valid": true,
+    "release_plans": 1,
+    "trace_events": 20,
+    "expected_components": 2,
+    "reconnects": 1,
+    "valid_trace_operationally_complete": true,
+    "all_failure_injections_rejected": true,
+    "deterministic_audit_hash": true,
+    "synthetic_empirical_windows": 0,
+    "campaign_promoted": false,
+    "required_test_count": 65,
+    "authenticated_vendor_request_executed": false,
+    "market_price_join_executed": false,
+    "price_model_executed": false
+  },
+  "decision_rule": {
+    "READY_TO_START_LICENSED_SHADOW_CAMPAIGN": "The offline operational drill and all failure injections pass exactly as preregistered.",
+    "FAIL_SHADOW_OPERATIONS": "Clock, schedule, continuity, component, store, replay, trial-count or test gates fail.",
+    "PROMOTE_SHADOW_CAMPAIGN": "Reserved for a later run with at least six complete licensed empirical windows, including three CPI and three NFP windows."
+  },
+  "economic_decision": "Even a promoted operational campaign does not establish an edge. Price joining and model fitting require a separately preregistered empirical trial.",
+  "out_of_scope": [
+    "opening an authenticated stream without user-supplied credentials and written rights",
+    "counting synthetic traces as empirical windows",
+    "historical price joining",
+    "price prediction",
+    "parameter fitting",
+    "live order generation"
+  ]
+}

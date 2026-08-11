@@ -105,3 +105,20 @@ The completed offline trial used original synthetic fixtures, not payloads copie
 from these pages. It made no authenticated request and acquired zero empirical
 vendor rows. The next production action remains conditional on a paid credential
 and an approved rights attestation.
+
+## Phase 4 schedule and stream operations
+
+Phase 4 adds versioned schedule evidence and a release-window trace. The schedule
+normalizer uses `America/New_York` rather than a fixed Eastern-to-UTC offset. The
+supervisor records the schedule hash used by each run because BLS says its release
+calendar is updated as needed. The current official references are:
+
+- BLS 2026 selected releases: <https://www.bls.gov/schedule/2026/home.htm>;
+- BLS Employment Situation schedule: <https://www.bls.gov/schedule/news_release/empsit.htm>;
+- Trading Economics calendar stream: <https://docs.tradingeconomics.com/economic_calendar/streaming/>;
+- Trading Economics calendar schema: <https://docs.tradingeconomics.com/economic_calendar/schema/>.
+
+The completed Phase 4 run used only synthetic schedule and telemetry fixtures. It
+opened no authenticated connection and counted zero empirical release windows.
+Clock, continuity and schedule checks are operational controls, not evidence of a
+tradable edge.
