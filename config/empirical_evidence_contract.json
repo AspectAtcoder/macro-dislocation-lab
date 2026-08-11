@@ -1,0 +1,40 @@
+{
+  "schema_version": "empirical_evidence_enrollment_v1",
+  "description": "Cross-linked evidence required before one licensed macro-release window may enter the empirical campaign ledger.",
+  "required_package_fields": [
+    "package_id",
+    "run_id",
+    "plan_id",
+    "event_family",
+    "scheduled_at",
+    "schedule_sha256",
+    "window_audit_hash",
+    "capture_integrity_hash",
+    "referenced_capture_ids",
+    "capture_reference_count",
+    "structurally_complete",
+    "enrollable",
+    "issues",
+    "package_hash"
+  ],
+  "capture_link_rules": {
+    "pre_snapshot": "The pre_snapshot_captured event must reference exactly one immutable HTTPS snapshot received before scheduled_at.",
+    "release_components": "Every release_component must reference an immutable websocket receipt containing the named provider component.",
+    "receive_clock": "Trace observed_at and capture received_at must agree within the registered tolerance.",
+    "payload_identity": "Every capture_id, payload hash, byte length and normalized provider event identity must replay from the raw store.",
+    "store_claim": "The trace store_audit values must equal a fresh integrity report; passed:true alone is not evidence."
+  },
+  "enrollment_rules": {
+    "rights": "A non-placeholder approved attestation must grant retention, historical backtesting, machine learning and derived-data rights.",
+    "license": "Every linked observation must use the attested non-synthetic license class.",
+    "provenance": "The trace must be licensed_shadow and captures must be authenticated API or calendar-stream receipts.",
+    "schedule": "Synthetic or example schedule sources never enroll.",
+    "completeness": "Both the Phase 4 window audit and the Phase 5 cross-link audit must pass."
+  },
+  "ledger_rules": {
+    "append_only": "Enrollment records are append-only JSONL with content hashes.",
+    "duplicates": "Duplicate package, run, plan or release-window identities fail closed.",
+    "promotion": "Only hash-valid enrollable records count toward the registered CPI and NFP floors.",
+    "economic_claim": "Campaign promotion remains operational evidence and never establishes predictive edge."
+  }
+}

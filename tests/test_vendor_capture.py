@@ -11,6 +11,7 @@ from macro_dislocation.pit_events import RIGHTS, audit_components
 from macro_dislocation.vendor_capture import (
     VendorCaptureStore,
     capture_authenticated_snapshot,
+    capture_observation_id,
     capture_stream_jsonl,
     public_endpoint,
     validate_rights_attestation,
@@ -121,6 +122,37 @@ class VendorCaptureTests(unittest.TestCase):
             self.assertEqual(snapshot.snapshot_at, "2030-01-10T13:30:01+00:00")
             self.assertEqual(snapshot.received_at, snapshot.snapshot_at)
             self.assertEqual(snapshot.provider_updated_at, "2030-01-10T13:30:00+00:00")
+
+    def test_replay_index_preserves_capture_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = VendorCaptureStore(Path(directory))
+            result = store.capture(
+                (FIXTURES / "te_calendar_pre_release.json").read_bytes(),
+                **capture_args(),
+            )
+            replayed = store.replay_index()
+            self.assertEqual(set(replayed), {result.observation["capture_id"]})
+            self.assertEqual(len(replayed[result.observation["capture_id"]]), 1)
+
+    def test_capture_observation_hash_tamper_fails_integrity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = VendorCaptureStore(Path(directory))
+            result = store.capture(
+                (FIXTURES / "te_calendar_pre_release.json").read_bytes(),
+                **capture_args(),
+            )
+            self.assertEqual(
+                capture_observation_id(result.observation),
+                result.observation["capture_id"],
+            )
+            tampered = dict(result.observation)
+            tampered["received_monotonic_ns"] += 1
+            store.observations_path.write_text(
+                json.dumps(tampered) + "\n", encoding="utf-8"
+            )
+            report = store.integrity_report()
+            self.assertFalse(report["passed"])
+            self.assertIn("capture observation hash mismatch", report["violations"][0])
 
     def test_malformed_json_is_rejected_before_write(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -1,0 +1,22 @@
+[
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"run_started","observed_at":"2030-01-10T13:27:45+00:00","received_monotonic_ns":1000000000,"details":{"schedule_sha256":"$SCHEDULE_SHA256","provenance":"synthetic_fixture_not_empirical"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"clock_sample","observed_at":"2030-01-10T13:27:46+00:00","received_monotonic_ns":2000000000,"details":{"server":"ntp-a.invalid","offset_ms":4.0,"rtt_ms":12.0}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"clock_sample","observed_at":"2030-01-10T13:27:47+00:00","received_monotonic_ns":3000000000,"details":{"server":"ntp-b.invalid","offset_ms":-6.0,"rtt_ms":18.0}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"clock_sample","observed_at":"2030-01-10T13:27:48+00:00","received_monotonic_ns":4000000000,"details":{"server":"ntp-c.invalid","offset_ms":3.0,"rtt_ms":15.0}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"stream_connected","observed_at":"2030-01-10T13:27:50+00:00","received_monotonic_ns":6000000000,"details":{"connection_id":"connection-1"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"heartbeat","observed_at":"2030-01-10T13:28:00+00:00","received_monotonic_ns":16000000000,"details":{"connection_id":"connection-1"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"heartbeat","observed_at":"2030-01-10T13:28:30+00:00","received_monotonic_ns":46000000000,"details":{"connection_id":"connection-1"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"heartbeat","observed_at":"2030-01-10T13:29:00+00:00","received_monotonic_ns":76000000000,"details":{"connection_id":"connection-1"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"pre_snapshot_captured","observed_at":"2030-01-10T13:29:05+00:00","received_monotonic_ns":81000000000,"details":{"capture_id":"$PRE_CAPTURE_ID","consensus_components":["SYNTH-CPI-HEADLINE","SYNTH-CPI-CORE"]}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"heartbeat","observed_at":"2030-01-10T13:29:30+00:00","received_monotonic_ns":106000000000,"details":{"connection_id":"connection-1"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"release_component","observed_at":"2030-01-10T13:30:00.800000+00:00","received_monotonic_ns":136800000000,"details":{"component_id":"SYNTH-CPI-HEADLINE","capture_id":"$POST_CAPTURE_ID"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"release_component","observed_at":"2030-01-10T13:30:00.800000+00:00","received_monotonic_ns":136800000000,"details":{"component_id":"SYNTH-CPI-CORE","capture_id":"$POST_CAPTURE_ID"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"heartbeat","observed_at":"2030-01-10T13:30:10+00:00","received_monotonic_ns":146000000000,"details":{"connection_id":"connection-1"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"stream_disconnected","observed_at":"2030-01-10T13:30:30+00:00","received_monotonic_ns":166000000000,"details":{"connection_id":"connection-1","reason":"synthetic_disconnect"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"stream_reconnected","observed_at":"2030-01-10T13:30:38+00:00","received_monotonic_ns":174000000000,"details":{"connection_id":"connection-2"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"heartbeat","observed_at":"2030-01-10T13:31:00+00:00","received_monotonic_ns":196000000000,"details":{"connection_id":"connection-2"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"heartbeat","observed_at":"2030-01-10T13:31:30+00:00","received_monotonic_ns":226000000000,"details":{"connection_id":"connection-2"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"heartbeat","observed_at":"2030-01-10T13:32:00+00:00","received_monotonic_ns":256000000000,"details":{"connection_id":"connection-2"}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"store_audit","observed_at":"2030-01-10T13:32:01+00:00","received_monotonic_ns":257000000000,"details":{"passed":true,"violations":[],"observations":2,"unique_raw_blobs":2,"credential_persistence_matches":0}},
+  {"run_id":"SYNTH-PHASE5-RUN-001","plan_id":"$PLAN_ID","kind":"stream_closed","observed_at":"2030-01-10T13:32:05+00:00","received_monotonic_ns":261000000000,"details":{"connection_id":"connection-2","reason":"planned_window_complete"}}
+]

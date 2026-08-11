@@ -76,6 +76,20 @@ campaignは未昇格、価格実験もNo-Goです。詳細は
 [Phase 4 protocol](docs/PHASE4_PROTOCOL.md)、
 [shadow campaign runbook](docs/SHADOW_CAMPAIGN_RUNBOOK.md)を参照してください。
 
+## Phase 5 status
+
+Phase 5は2026-08-11に **READY_FOR_LICENSED_EVIDENCE_ENROLLMENT** で完了しました。
+Phase 3のimmutable captureとPhase 4のrelease-window traceをcapture ID、受信時計、
+payload内component、実store監査、権利・license・provenanceで相互照合する層です。
+
+登録済みoffline packageは2 capture receipt・2 raw blob・4 snapshot・20 trace event・
+3 capture referenceを再生し、7 failure injectionと全92テストがPASSしました。
+synthetic evidenceの登録は0件です。credentialと承認済みrights attestationは未配置なので、
+外部状態は **WAITING_FOR_VENDOR_CREDENTIAL_RIGHTS_AND_RELEASE_WINDOWS**、価格実験は
+No-Goです。詳細は[Phase 5 result](docs/PHASE5_RESULT.md)、
+[Phase 5 protocol](docs/PHASE5_PROTOCOL.md)、
+[evidence enrollment runbook](docs/EVIDENCE_ENROLLMENT_RUNBOOK.md)を参照してください。
+
 ## Experiment 0
 
 発表直前の最後の気配を基準に、+1秒、+5秒、+30秒、+1分、+5分、+15分、
@@ -146,13 +160,19 @@ macro-lab phase4-complete
 # Phase 4: schedule、append-only trace、audit hash、campaign gateを監査
 macro-lab verify-phase4
 
+# Phase 5: capture-to-trace cross-linkとoffline failure injectionを実行
+macro-lab phase5-complete
+
+# Phase 5: preregistration、raw replay、package hash、ledger gateを監査
+macro-lab verify-phase5
+
 # テスト
 python -m unittest discover -s tests -v
 ```
 
 生成物は `artifacts/phase0_complete_2024/`、`artifacts/phase1_complete/`、
 `artifacts/phase2_complete/`、`artifacts/phase3_complete/`、
-`artifacts/phase4_complete/` のCSV、JSON、
+`artifacts/phase4_complete/`、`artifacts/phase5_complete/` のCSV、JSON、
 Markdown、SVGです。
 生データ・処理済み相場データ・生成物はGit管理外です。
 
