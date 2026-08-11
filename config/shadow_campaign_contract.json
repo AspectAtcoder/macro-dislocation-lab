@@ -1,0 +1,60 @@
+{
+  "schema_version": "shadow_campaign_v1",
+  "description": "Operational evidence and promotion rules for licensed macro-release shadow capture windows.",
+  "required_plan_fields": [
+    "plan_id",
+    "provider_bundle_id",
+    "event_family",
+    "country",
+    "currency",
+    "scheduled_at",
+    "expected_components",
+    "schedule_source_url",
+    "schedule_captured_at",
+    "schedule_sha256",
+    "stream_start_at",
+    "pre_snapshot_due_at",
+    "stream_end_at"
+  ],
+  "required_trace_fields": [
+    "run_id",
+    "plan_id",
+    "kind",
+    "observed_at",
+    "received_monotonic_ns",
+    "details"
+  ],
+  "allowed_trace_kinds": [
+    "run_started",
+    "clock_sample",
+    "stream_connected",
+    "heartbeat",
+    "pre_snapshot_captured",
+    "release_component",
+    "stream_disconnected",
+    "stream_reconnected",
+    "store_audit",
+    "stream_closed"
+  ],
+  "timing_rules": {
+    "all_wall_clocks": "Offset-aware ISO-8601 normalized to UTC.",
+    "trace_order": "Append order must be non-decreasing in both observed_at and received_monotonic_ns.",
+    "clock_evidence": "At least three independent clock samples must be recorded inside the registered pre-release window.",
+    "pre_snapshot": "A consensus snapshot must be locally received strictly before scheduled_at and within the configured maximum age.",
+    "simultaneous_components": "Every expected component must be received at or after scheduled_at within the registered completion window.",
+    "stream_continuity": "Heartbeat gaps and explicit disconnect-to-reconnect gaps must remain within their separate registered limits.",
+    "post_window": "The stream may close only after stream_end_at and a passing raw-store audit."
+  },
+  "schedule_rules": {
+    "versioned_source": "Persist exact schedule bytes, SHA-256 and local receipt time for each run.",
+    "freshness": "schedule_captured_at must precede scheduled_at and meet the registered maximum age.",
+    "drift": "A trace whose schedule hash differs from its plan fails closed and requires a new plan rather than an in-place edit.",
+    "timezone": "Convert official source timezone with a named zone; do not hard-code a fixed Eastern-to-UTC offset."
+  },
+  "promotion_rules": {
+    "empirical_only": "Synthetic drills, documentation examples and historical replays never count toward campaign promotion.",
+    "complete_windows": "Only windows passing every critical operational gate count.",
+    "family_floor": "Meet the registered complete-window minimum separately for CPI and NFP.",
+    "economic_claim": "Operational promotion never establishes predictive edge or authorizes live trading."
+  }
+}
