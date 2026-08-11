@@ -41,7 +41,8 @@ pre-release vendor snapshot取得後にprovider IDを解決するまで残す。
 ## 4. rehearsalとshadow capture
 
 発表2時間前までにNTP、二重時計、HTTPS snapshot、websocket heartbeat、reconnect、raw
-store、空き容量を確認する。以後は[shadow campaign runbook](SHADOW_CAMPAIGN_RUNBOOK.md)と
+store、空き容量を確認する。以後は[shadow campaign runbook](SHADOW_CAMPAIGN_RUNBOOK.md)、
+[provider binding runbook](PROVIDER_BINDING_RUNBOOK.md)、
 [evidence enrollment runbook](EVIDENCE_ENROLLMENT_RUNBOOK.md)に従う。
 
 失敗したtraceを編集しない。同じreleaseを後日APIで取得してlive captureとして登録しない。
