@@ -122,3 +122,16 @@ The completed Phase 4 run used only synthetic schedule and telemetry fixtures. I
 opened no authenticated connection and counted zero empirical release windows.
 Clock, continuity and schedule checks are operational controls, not evidence of a
 tradable edge.
+
+## Phase 5 evidence enrollment
+
+Phase 5 treats the Trading Economics streaming and schema pages as interface
+references only. A trace assertion is not accepted as vendor evidence until its
+capture ID resolves to the immutable raw store and the normalized provider event
+identity replays from that blob. CPI and Employment Situation schedule evidence
+must remain versioned from BLS official calendars.
+
+The completed Phase 5 trial used only original synthetic payloads. No credential,
+rights attestation, authenticated request, empirical window or market-price join
+was present. Production use remains conditional on the provider contract and the
+runbook's evidence-enrollment gate.

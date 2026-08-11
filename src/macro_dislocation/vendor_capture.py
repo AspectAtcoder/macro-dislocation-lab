@@ -39,6 +39,18 @@ def sha256_bytes(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
+def capture_observation_id(observation: dict[str, Any]) -> str:
+    """Recompute the content identity of one capture receipt envelope."""
+    core = {
+        name: observation[name]
+        for name in CAPTURE_OBSERVATION_FIELDS
+        if name != "capture_id"
+    }
+    return sha256_bytes(
+        json.dumps(core, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    )
+
+
 def utc_now() -> str:
     return datetime.now(UTC).isoformat(timespec="microseconds")
 
@@ -221,10 +233,8 @@ class VendorCaptureStore:
             },
             "provenance": provenance,
         }
-        capture_id = sha256_bytes(
-            json.dumps(core, sort_keys=True, separators=(",", ":")).encode("utf-8")
-        )
-        observation = {"capture_id": capture_id, **core}
+        observation = {"capture_id": "", **core}
+        observation["capture_id"] = capture_observation_id(observation)
         inserted = self._write_blob_once(payload, digest)
         self._append_observation(observation)
         return CaptureResult(observation, normalized, inserted)
@@ -249,30 +259,42 @@ class VendorCaptureStore:
                 rows.append(row)
         return rows
 
-    def replay(self) -> list[PitSnapshot]:
-        snapshots: list[PitSnapshot] = []
+    def _replay_observation(self, observation: dict[str, Any]) -> list[PitSnapshot]:
+        digest = observation["payload_sha256"]
+        path = self._blob_path(digest)
+        if not path.is_file():
+            raise ValueError(f"missing raw payload: {digest}")
+        payload = path.read_bytes()
+        if sha256_bytes(payload) != digest:
+            raise ValueError(f"raw payload hash mismatch: {digest}")
+        if len(payload) != observation["payload_bytes"]:
+            raise ValueError(f"raw payload size mismatch: {digest}")
+        rows = _json_rows(payload)
+        return normalize_trading_economics_snapshot(
+            rows,
+            snapshot_at=observation["received_at"],
+            received_at=observation["received_at"],
+            rights_profile=observation["rights_profile"],
+            license_class=observation["license_class"],
+            provenance=observation["provenance"],
+        )
+
+    def replay_index(self) -> dict[str, list[PitSnapshot]]:
+        """Replay immutable blobs while retaining their receipt identities."""
+        output: dict[str, list[PitSnapshot]] = {}
         for observation in self.observations():
-            digest = observation["payload_sha256"]
-            path = self._blob_path(digest)
-            if not path.is_file():
-                raise ValueError(f"missing raw payload: {digest}")
-            payload = path.read_bytes()
-            if sha256_bytes(payload) != digest:
-                raise ValueError(f"raw payload hash mismatch: {digest}")
-            if len(payload) != observation["payload_bytes"]:
-                raise ValueError(f"raw payload size mismatch: {digest}")
-            rows = _json_rows(payload)
-            snapshots.extend(
-                normalize_trading_economics_snapshot(
-                    rows,
-                    snapshot_at=observation["received_at"],
-                    received_at=observation["received_at"],
-                    rights_profile=observation["rights_profile"],
-                    license_class=observation["license_class"],
-                    provenance=observation["provenance"],
-                )
-            )
-        return snapshots
+            capture_id = str(observation["capture_id"])
+            if capture_id in output:
+                raise ValueError(f"duplicate capture_id: {capture_id}")
+            output[capture_id] = self._replay_observation(observation)
+        return output
+
+    def replay(self) -> list[PitSnapshot]:
+        return [
+            snapshot
+            for snapshots in self.replay_index().values()
+            for snapshot in snapshots
+        ]
 
     def integrity_report(self, *, forbidden_values: Iterable[str] = ()) -> dict[str, Any]:
         violations: list[str] = []
@@ -287,7 +309,14 @@ class VendorCaptureStore:
                 "credential_persistence_matches": 0,
             }
         digests: set[str] = set()
+        capture_ids: set[str] = set()
         for row in observations:
+            capture_id = str(row["capture_id"])
+            if capture_id in capture_ids:
+                violations.append(f"duplicate capture_id: {capture_id}")
+            capture_ids.add(capture_id)
+            if capture_observation_id(row) != capture_id:
+                violations.append(f"capture observation hash mismatch: {capture_id}")
             digest = str(row["payload_sha256"])
             digests.add(digest)
             path = self._blob_path(digest)

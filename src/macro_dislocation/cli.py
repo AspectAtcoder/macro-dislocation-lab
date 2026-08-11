@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -10,11 +11,18 @@ from .calendar_data import load_event_times, normalize_calendar
 from .baseline import run_baseline
 from .dukascopy import event_hours, write_quote_csv
 from .experiment import run_experiment
+from .evidence_enrollment import (
+    EvidenceLedger,
+    audit_evidence_package,
+    campaign_checkpoint,
+    vendor_access_preflight,
+)
 from .phase0 import run_phase0
 from .phase1 import run_phase1
 from .phase2 import run_phase2
 from .phase3 import run_phase3
 from .phase4 import run_phase4
+from .phase5 import run_phase5
 from .shadow_campaign import (
     ShadowTraceStore,
     audit_shadow_trace,
@@ -32,6 +40,7 @@ from .verify_phase1 import verify_phase1
 from .verify_phase2 import verify_phase2
 from .verify_phase3 import verify_phase3
 from .verify_phase4 import verify_phase4
+from .verify_phase5 import verify_phase5
 
 CONSENSUS_URL = "https://huggingface.co/datasets/Ehsanrs2/Forex_Factory_Calendar"
 
@@ -310,6 +319,92 @@ def _audit_shadow_run(args: argparse.Namespace) -> None:
     print(json.dumps(audit, ensure_ascii=False, indent=2))
 
 
+def _phase5(args: argparse.Namespace) -> None:
+    result = run_phase5(
+        Path(args.specification),
+        Path(args.evidence_contract),
+        Path(args.capture_contract),
+        Path(args.campaign_contract),
+        Path(args.schedule),
+        Path(args.trace),
+        Path(args.pre_payload),
+        Path(args.post_payload),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase5(args: argparse.Namespace) -> None:
+    result = verify_phase5(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.evidence_contract),
+        Path(args.capture_contract),
+        Path(args.campaign_contract),
+        Path(args.schedule),
+        Path(args.trace),
+        Path(args.pre_payload),
+        Path(args.post_payload),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
+def _vendor_preflight(args: argparse.Namespace) -> None:
+    path = Path(args.rights_attestation) if args.rights_attestation else None
+    result = vendor_access_preflight(path)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["ready"]:
+        raise SystemExit(1)
+
+
+def _audit_evidence(args: argparse.Namespace) -> None:
+    specification = json.loads(Path(args.specification).read_text(encoding="utf-8"))
+    plans = build_release_plans(Path(args.schedule), specification["policy"])
+    matching = [plan for plan in plans if plan.plan_id == args.plan_id]
+    if len(matching) != 1:
+        raise SystemExit(f"plan_id must identify exactly one plan: {args.plan_id}")
+    rights = Path(args.rights_attestation) if args.rights_attestation else None
+    credential = os.environ.get("TRADING_ECONOMICS_API_KEY", "")
+    package = audit_evidence_package(
+        matching[0],
+        ShadowTraceStore(Path(args.trace_store)).events(),
+        VendorCaptureStore(Path(args.capture_store)),
+        specification["policy"],
+        rights_attestation_path=rights,
+        forbidden_values=(credential,) if credential else (),
+    )
+    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.output).write_text(
+        json.dumps(package, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps(package, ensure_ascii=False, indent=2))
+
+
+def _enroll_evidence(args: argparse.Namespace) -> None:
+    package = json.loads(Path(args.package).read_text(encoding="utf-8"))
+    stored = EvidenceLedger(Path(args.ledger)).append(package)
+    print(json.dumps(stored, ensure_ascii=False, indent=2))
+
+
+def _campaign_checkpoint(args: argparse.Namespace) -> None:
+    specification = json.loads(Path(args.specification).read_text(encoding="utf-8"))
+    result = campaign_checkpoint(
+        EvidenceLedger(Path(args.ledger)).packages(), specification["policy"]
+    )
+    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.output).write_text(
+        json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="macro-lab")
     commands = root.add_subparsers(required=True)
@@ -501,6 +596,82 @@ def parser() -> argparse.ArgumentParser:
     shadow_audit.add_argument("--specification", default="config/phase4_trial_001.json")
     shadow_audit.add_argument("--output", required=True)
     shadow_audit.set_defaults(func=_audit_shadow_run)
+
+    phase5 = commands.add_parser("phase5-complete")
+    phase5.add_argument("--specification", default="config/phase5_trial_001.json")
+    phase5.add_argument(
+        "--evidence-contract", default="config/empirical_evidence_contract.json"
+    )
+    phase5.add_argument(
+        "--capture-contract", default="config/vendor_capture_contract.json"
+    )
+    phase5.add_argument(
+        "--campaign-contract", default="config/shadow_campaign_contract.json"
+    )
+    phase5.add_argument(
+        "--schedule", default="tests/fixtures/phase5_release_schedule.json"
+    )
+    phase5.add_argument("--trace", default="tests/fixtures/phase5_trace_linked.json")
+    phase5.add_argument(
+        "--pre-payload", default="tests/fixtures/phase5_te_pre_release.json"
+    )
+    phase5.add_argument(
+        "--post-payload", default="tests/fixtures/phase5_te_post_release.json"
+    )
+    phase5.add_argument("--output-dir", default="artifacts/phase5_complete")
+    phase5.add_argument("--project-root", default=".")
+    phase5.set_defaults(func=_phase5)
+
+    verify5 = commands.add_parser("verify-phase5")
+    verify5.add_argument("--output-dir", default="artifacts/phase5_complete")
+    verify5.add_argument("--specification", default="config/phase5_trial_001.json")
+    verify5.add_argument(
+        "--evidence-contract", default="config/empirical_evidence_contract.json"
+    )
+    verify5.add_argument(
+        "--capture-contract", default="config/vendor_capture_contract.json"
+    )
+    verify5.add_argument(
+        "--campaign-contract", default="config/shadow_campaign_contract.json"
+    )
+    verify5.add_argument(
+        "--schedule", default="tests/fixtures/phase5_release_schedule.json"
+    )
+    verify5.add_argument("--trace", default="tests/fixtures/phase5_trace_linked.json")
+    verify5.add_argument(
+        "--pre-payload", default="tests/fixtures/phase5_te_pre_release.json"
+    )
+    verify5.add_argument(
+        "--post-payload", default="tests/fixtures/phase5_te_post_release.json"
+    )
+    verify5.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify5.add_argument("--project-root", default=".")
+    verify5.set_defaults(func=_verify_phase5)
+
+    access = commands.add_parser("vendor-access-preflight")
+    access.add_argument("--rights-attestation")
+    access.set_defaults(func=_vendor_preflight)
+
+    evidence = commands.add_parser("audit-evidence-package")
+    evidence.add_argument("--schedule", required=True)
+    evidence.add_argument("--trace-store", required=True)
+    evidence.add_argument("--capture-store", required=True)
+    evidence.add_argument("--plan-id", required=True)
+    evidence.add_argument("--rights-attestation")
+    evidence.add_argument("--specification", default="config/phase5_trial_001.json")
+    evidence.add_argument("--output", required=True)
+    evidence.set_defaults(func=_audit_evidence)
+
+    enroll = commands.add_parser("enroll-evidence-package")
+    enroll.add_argument("--package", required=True)
+    enroll.add_argument("--ledger", default="data/raw/evidence_ledger")
+    enroll.set_defaults(func=_enroll_evidence)
+
+    checkpoint = commands.add_parser("campaign-checkpoint")
+    checkpoint.add_argument("--ledger", default="data/raw/evidence_ledger")
+    checkpoint.add_argument("--specification", default="config/phase5_trial_001.json")
+    checkpoint.add_argument("--output", required=True)
+    checkpoint.set_defaults(func=_campaign_checkpoint)
     return root
 
 
