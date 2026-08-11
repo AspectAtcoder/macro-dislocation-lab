@@ -1,0 +1,20 @@
+{
+  "schema_version": "activation_handoff_v1",
+  "description": "One-to-one provider-component binding and fail-closed handoff from a prospective BLS roster window into the shadow-campaign schedule contract.",
+  "required_binding_fields": ["binding_id", "source_event_id", "provider", "capture_id", "captured_at", "provenance", "license_class", "rights_profile", "components"],
+  "required_component_fields": ["logical_component", "provider_event_id", "provider_indicator", "scheduled_at", "reference_period", "unit"],
+  "binding_rules": {
+    "coverage": "Every logical component registered for the selected roster window must bind exactly once.",
+    "identity": "Provider event IDs must be non-empty and unique inside one release bundle.",
+    "schedule": "Every provider component must have the exact registered release timestamp.",
+    "capture": "The binding must name the immutable pre-release capture receipt from which provider IDs were resolved.",
+    "eligibility": "Only a licensed vendor snapshot with every required right may produce an executable handoff; synthetic fixtures remain structural previews."
+  },
+  "handoff_rules": {
+    "activation": "The Phase 6 activation packet must be READY_FOR_ACTIVATION before an executable schedule or permit can be emitted.",
+    "freshness": "The binding capture must fall inside the registered schedule-refresh window and must not be in the future at evaluation.",
+    "immutability": "Seal roster, binding, schedule and activation-packet hashes into the handoff.",
+    "expiry": "An executable handoff expires at the release time and cannot authorize historical reconstruction.",
+    "scope": "The handoff authorizes capture operations only; it never authorizes a price join, model or order."
+  }
+}

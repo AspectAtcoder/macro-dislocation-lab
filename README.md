@@ -104,6 +104,20 @@ activation packetへ統合しました。
 [Phase 6 protocol](docs/PHASE6_PROTOCOL.md)、
 [campaign activation runbook](docs/CAMPAIGN_ACTIVATION_RUNBOOK.md)を参照してください。
 
+## Phase 7 status
+
+Phase 7は2026-08-11に **READY_FOR_LICENSED_HANDOFF_PENDING_VENDOR_ACCESS_AND_BINDING**
+で完了しました。Phase 6の論理componentをprovider event IDへ一対一でbindingし、Phase 4
+shadow scheduleへ変換する層です。
+
+登録済み合成bindingは2 componentから1 release planを再現しましたが、synthetic、権利なし、
+immutable capture receipt未照合のためexecution permitは0件です。自己申告JSONではなくraw
+storeからreceipt・provider ID・日程を再生できた場合だけeligibleになることを固定し、7 failure
+injectionと全119テストがPASSしました。詳細は
+[Phase 7 result](docs/PHASE7_RESULT.md)、
+[Phase 7 protocol](docs/PHASE7_PROTOCOL.md)、
+[provider binding runbook](docs/PROVIDER_BINDING_RUNBOOK.md)を参照してください。
+
 ## Experiment 0
 
 発表直前の最後の気配を基準に、+1秒、+5秒、+30秒、+1分、+5分、+15分、
@@ -189,6 +203,12 @@ macro-lab verify-phase6
 # 現在時刻で、認証情報を表示せず次の候補状態を確認
 macro-lab campaign-roster-status
 
+# Phase 7: component bindingとPhase 4 schedule bridgeを検証
+macro-lab phase7-complete
+
+# Phase 7: preregistration、capture gate、handoff hashを監査
+macro-lab verify-phase7
+
 # テスト
 python -m unittest discover -s tests -v
 ```
@@ -196,7 +216,7 @@ python -m unittest discover -s tests -v
 生成物は `artifacts/phase0_complete_2024/`、`artifacts/phase1_complete/`、
 `artifacts/phase2_complete/`、`artifacts/phase3_complete/`、
 `artifacts/phase4_complete/`、`artifacts/phase5_complete/`、
-`artifacts/phase6_complete/` のCSV、JSON、
+`artifacts/phase6_complete/`、`artifacts/phase7_complete/` のCSV、JSON、
 Markdown、SVGです。
 生データ・処理済み相場データ・生成物はGit管理外です。
 

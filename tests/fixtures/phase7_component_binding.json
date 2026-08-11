@@ -1,0 +1,33 @@
+{
+  "binding_id": "phase7_synthetic_binding_001",
+  "source_event_id": "BLS-CPI-2026-07",
+  "provider": "trading_economics",
+  "capture_id": "7777777777777777777777777777777777777777777777777777777777777777",
+  "captured_at": "2026-08-11T10:00:00+00:00",
+  "provenance": "synthetic_fixture_not_empirical",
+  "license_class": "synthetic_fixture",
+  "rights_profile": {
+    "retention": false,
+    "historical_backtesting": false,
+    "machine_learning": false,
+    "derived_data": false
+  },
+  "components": [
+    {
+      "logical_component": "us_cpi_all_items",
+      "provider_event_id": "SYNTH-TE-CPI-2026-07",
+      "provider_indicator": "Synthetic United States CPI",
+      "scheduled_at": "2026-08-12T12:30:00+00:00",
+      "reference_period": "2026-07",
+      "unit": "percent"
+    },
+    {
+      "logical_component": "us_cpi_core",
+      "provider_event_id": "SYNTH-TE-CORE-CPI-2026-07",
+      "provider_indicator": "Synthetic United States Core CPI",
+      "scheduled_at": "2026-08-12T12:30:00+00:00",
+      "reference_period": "2026-07",
+      "unit": "percent"
+    }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "trial_id": "phase7_trial_001",
+  "registered_at": "2026-08-11T19:22:52+09:00",
+  "evaluated_at": "2026-08-11T10:22:52+00:00",
+  "purpose": "Bridge the registered Phase 6 CPI window into the Phase 4 shadow-schedule schema through an explicit one-to-one provider-component binding, without issuing an executable handoff from synthetic or unlicensed evidence.",
+  "hypothesis": "A deterministic compiler can validate two logical CPI components, produce one non-executable shadow-schedule preview, reject binding and activation bypasses, and emit zero execution permits while credential and rights inputs are absent.",
+  "inputs": {
+    "handoff_contract": "config/activation_handoff_contract.json",
+    "phase6_specification": "config/phase6_trial_001.json",
+    "campaign_roster": "config/phase6_campaign_roster_001.json",
+    "phase4_specification": "config/phase4_trial_001.json",
+    "synthetic_binding": "tests/fixtures/phase7_component_binding.json"
+  },
+  "scope": {
+    "allowed_handoff_trials": 1,
+    "selected_roster_windows": 1,
+    "logical_components": 2,
+    "provider_components": 2,
+    "shadow_schedule_previews": 1,
+    "executable_handoffs": 0,
+    "allowed_authenticated_vendor_requests": 0,
+    "allowed_market_price_joins": 0,
+    "allowed_price_model_trials": 0
+  },
+  "policy": {
+    "binding_max_age_seconds": 172800,
+    "provider": "trading_economics",
+    "required_rights": ["retention", "historical_backtesting", "machine_learning", "derived_data"],
+    "country": "United States",
+    "currency": "USD"
+  },
+  "failure_injections": {
+    "missing_logical_component": "missing_logical_component",
+    "duplicate_provider_id": "duplicate_provider_event_id",
+    "provider_schedule_drift": "provider_schedule_mismatch",
+    "synthetic_provenance": "synthetic_binding_not_empirical",
+    "malformed_capture_id": "invalid_capture_id",
+    "stale_binding_capture": "binding_snapshot_stale",
+    "activation_bypass": "activation_status_not_ready"
+  },
+  "completion_gates": {
+    "handoff_contract_schema_valid": true,
+    "selected_roster_windows": 1,
+    "logical_components": 2,
+    "provider_components": 2,
+    "binding_structurally_complete": true,
+    "binding_execution_eligible": false,
+    "shadow_schedule_previews": 1,
+    "shadow_release_plans": 1,
+    "executable_handoffs": 0,
+    "activation_status": "BLOCKED_VENDOR_ACCESS",
+    "all_failure_injections_rejected": true,
+    "deterministic_handoff_hash": true,
+    "required_test_count": 115,
+    "credential_present": false,
+    "rights_attestation_present": false,
+    "authenticated_vendor_request_executed": false,
+    "market_price_join_executed": false,
+    "price_model_executed": false
+  },
+  "decision_rule": {
+    "READY_FOR_LICENSED_HANDOFF_PENDING_VENDOR_ACCESS_AND_BINDING": "The binding compiler, Phase 4 schedule bridge, failure injections and replay verifier pass, while synthetic inputs produce no executable handoff.",
+    "FAIL_ACTIVATION_HANDOFF": "A component, schedule, capture, rights, provenance, activation, preregistration or test gate fails unexpectedly.",
+    "EXECUTABLE_HANDOFF": "Reserved for a future run with a fresh official roster, live credential, approved rights and a licensed immutable pre-release capture."
+  },
+  "external_status": "BLOCKED_VENDOR_ACCESS",
+  "economic_decision": "A handoff is capture-control metadata only. It does not establish an edge or authorize a market-price join, model fit or trade.",
+  "out_of_scope": [
+    "opening an authenticated connection",
+    "claiming synthetic provider IDs as empirical",
+    "issuing an executable handoff from a structural preview",
+    "historical reconstruction of a missed window",
+    "market-price joining",
+    "price prediction",
+    "parameter fitting",
+    "live order generation"
+  ]
+}

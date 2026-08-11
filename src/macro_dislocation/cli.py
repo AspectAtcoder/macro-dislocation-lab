@@ -26,6 +26,7 @@ from .phase3 import run_phase3
 from .phase4 import run_phase4
 from .phase5 import run_phase5
 from .phase6 import run_phase6
+from .phase7 import run_phase7
 from .shadow_campaign import (
     ShadowTraceStore,
     audit_shadow_trace,
@@ -45,6 +46,7 @@ from .verify_phase3 import verify_phase3
 from .verify_phase4 import verify_phase4
 from .verify_phase5 import verify_phase5
 from .verify_phase6 import verify_phase6
+from .verify_phase7 import verify_phase7
 
 CONSENSUS_URL = "https://huggingface.co/datasets/Ehsanrs2/Forex_Factory_Calendar"
 
@@ -404,6 +406,37 @@ def _campaign_roster_status(args: argparse.Namespace) -> None:
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def _phase7(args: argparse.Namespace) -> None:
+    result = run_phase7(
+        Path(args.specification),
+        Path(args.handoff_contract),
+        Path(args.phase6_specification),
+        Path(args.roster),
+        Path(args.phase4_specification),
+        Path(args.binding),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase7(args: argparse.Namespace) -> None:
+    result = verify_phase7(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.handoff_contract),
+        Path(args.phase6_specification),
+        Path(args.roster),
+        Path(args.phase4_specification),
+        Path(args.binding),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
 def _vendor_preflight(args: argparse.Namespace) -> None:
     path = Path(args.rights_attestation) if args.rights_attestation else None
     result = vendor_access_preflight(path)
@@ -735,6 +768,49 @@ def parser() -> argparse.ArgumentParser:
     roster_status.add_argument("--rights-attestation")
     roster_status.add_argument("--output")
     roster_status.set_defaults(func=_campaign_roster_status)
+
+    phase7 = commands.add_parser("phase7-complete")
+    phase7.add_argument("--specification", default="config/phase7_trial_001.json")
+    phase7.add_argument(
+        "--handoff-contract", default="config/activation_handoff_contract.json"
+    )
+    phase7.add_argument(
+        "--phase6-specification", default="config/phase6_trial_001.json"
+    )
+    phase7.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    phase7.add_argument(
+        "--phase4-specification", default="config/phase4_trial_001.json"
+    )
+    phase7.add_argument(
+        "--binding", default="tests/fixtures/phase7_component_binding.json"
+    )
+    phase7.add_argument("--output-dir", default="artifacts/phase7_complete")
+    phase7.add_argument("--project-root", default=".")
+    phase7.set_defaults(func=_phase7)
+
+    verify7 = commands.add_parser("verify-phase7")
+    verify7.add_argument("--output-dir", default="artifacts/phase7_complete")
+    verify7.add_argument("--specification", default="config/phase7_trial_001.json")
+    verify7.add_argument(
+        "--handoff-contract", default="config/activation_handoff_contract.json"
+    )
+    verify7.add_argument(
+        "--phase6-specification", default="config/phase6_trial_001.json"
+    )
+    verify7.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    verify7.add_argument(
+        "--phase4-specification", default="config/phase4_trial_001.json"
+    )
+    verify7.add_argument(
+        "--binding", default="tests/fixtures/phase7_component_binding.json"
+    )
+    verify7.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify7.add_argument("--project-root", default=".")
+    verify7.set_defaults(func=_verify_phase7)
 
     access = commands.add_parser("vendor-access-preflight")
     access.add_argument("--rights-attestation")

@@ -149,3 +149,16 @@ activation interval. It remained blocked because no Trading Economics credential
 or approved rights attestation was present. No substitute aggregator, historical
 backfill or current-page scrape was counted as a live receipt. See
 `docs/CAMPAIGN_ACTIVATION_RUNBOOK.md` for the operational boundary.
+
+## Phase 7 provider-component binding
+
+Phase 7 adds the join key that schedule pages cannot provide: stable vendor event
+IDs for every logical CPI/NFP component. A binding is not trusted because a JSON
+file calls itself licensed. Its capture ID, receive time, license, rights and
+provider IDs must replay from the Phase 3 immutable store, and each provider
+timestamp must equal the official BLS roster time.
+
+The completed trial used original synthetic provider IDs and made no network
+request. It produced one structurally valid Phase 4 schedule preview but zero
+executable handoffs. Production remains blocked pending licensed access and a
+prospectively captured snapshot.
