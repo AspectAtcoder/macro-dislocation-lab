@@ -1,0 +1,54 @@
+{
+  "trial_id": "phase10_trial_001",
+  "registered_at": "2026-08-11T14:09:10+00:00",
+  "purpose": "Build one point-in-time price/feature join and dynamic event-cost contract for residual returns after the release jump.",
+  "inputs": {
+    "synthetic_events": "config/phase10_synthetic_events.csv",
+    "phase9_specification": "config/phase9_trial_001.json"
+  },
+  "asset": "USDJPY",
+  "timing": {
+    "anchor_seconds_after_release": 60,
+    "exit_seconds_after_release": [900, 3600],
+    "maximum_quote_lag_seconds": 2,
+    "maximum_feature_ready_seconds": 60
+  },
+  "cost": {
+    "spread_source": "observed_bid_ask_at_each_leg",
+    "slippage_formula": "0.25 * contemporaneous spread bp + 0.10 * pre-event volatility bp per leg",
+    "constant_cost_forbidden": true
+  },
+  "sample": {
+    "synthetic_events": 36,
+    "backtest_events": 24,
+    "forward_events": 12,
+    "quote_points_per_event": 3,
+    "empirical_events": 0
+  },
+  "features": [
+    "headline_surprise",
+    "revision_surprise",
+    "internal_breadth",
+    "regime_score",
+    "pre_volatility_bp"
+  ],
+  "failure_injections": {
+    "feature_after_anchor": "feature_not_point_in_time",
+    "stale_quote": "quote_lag_exceeded",
+    "crossed_market": "invalid_bid_ask",
+    "duplicate_event": "duplicate_event_id",
+    "constant_cost": "constant_cost_forbidden",
+    "nonfinite_value": "nonfinite_numeric_value"
+  },
+  "completion_gates": {
+    "labeled_rows": 72,
+    "quote_rows": 108,
+    "backtest_events": 24,
+    "forward_events": 12,
+    "empirical_events": 0,
+    "failure_injections": 6,
+    "required_test_count": 155
+  },
+  "decision": "READY_FOR_REGISTERED_WALK_FORWARD_BACKTEST",
+  "economic_decision": "Synthetic labels validate timing and cost arithmetic only; they are not evidence of residual predictability."
+}

@@ -1,0 +1,44 @@
+{
+  "trial_id": "phase9_trial_001",
+  "registered_at": "2026-08-11T14:09:10+00:00",
+  "purpose": "Build a hash-chained, append-only campaign state machine from planning through authorized evidence enrollment without opening an external connection.",
+  "inputs": {
+    "phase8_specification": "config/phase8_trial_001.json",
+    "campaign_roster": "config/phase6_campaign_roster_001.json"
+  },
+  "state_order": [
+    "PLANNED",
+    "ACCESS_AUTHORIZED",
+    "BINDING_CAPTURED",
+    "PRE_RELEASE_CAPTURED",
+    "STREAM_COMPLETE",
+    "EVIDENCE_ENROLLED"
+  ],
+  "terminal_states": ["EVIDENCE_ENROLLED", "ABORTED"],
+  "policy": {
+    "require_monotonic_event_time": true,
+    "require_source_event_binding": true,
+    "require_evidence_id_after_planning": true,
+    "allow_abort_from_nonterminal": true,
+    "allow_resume_after_abort": false
+  },
+  "failure_injections": {
+    "out_of_order_transition": "campaign_transition_invalid",
+    "duplicate_transition": "campaign_transition_invalid",
+    "clock_regression": "campaign_clock_regression",
+    "source_substitution": "campaign_source_event_mismatch",
+    "missing_evidence": "campaign_evidence_required",
+    "hash_tamper": "campaign_event_hash_mismatch"
+  },
+  "completion_gates": {
+    "synthetic_campaigns": 1,
+    "synthetic_events": 6,
+    "structurally_complete_campaigns": 1,
+    "empirical_campaigns": 0,
+    "prospective_vendor_requests": 0,
+    "failure_injections": 6,
+    "required_test_count": 148
+  },
+  "decision": "READY_FOR_PROSPECTIVE_CAMPAIGN_ORCHESTRATION",
+  "economic_decision": "A structurally complete synthetic campaign validates state handling only and does not authorize a price join, model, paper signal or order."
+}
