@@ -1,0 +1,86 @@
+{
+  "trial_id": "phase3_trial_001",
+  "registered_at": "2026-08-10T00:00:00+09:00",
+  "purpose": "Validate an append-only licensed-vendor capture and replay layer before any authenticated shadow collection or price join.",
+  "hypothesis": "One recorder can preserve HTTPS snapshot and streaming calendar payloads with dual clocks, normalize both schemas identically, replay deterministically, reject malformed or unlicensed inputs and never persist credentials.",
+  "inputs": {
+    "pit_contract": "config/pit_event_contract.json",
+    "capture_contract": "config/vendor_capture_contract.json",
+    "pre_release_fixture": "tests/fixtures/te_calendar_pre_release.json",
+    "post_release_fixture": "tests/fixtures/te_calendar_post_release.json"
+  },
+  "scope": {
+    "allowed_capture_pipeline_trials": 1,
+    "allowed_authenticated_vendor_requests": 0,
+    "fixture_receipts": 3,
+    "unique_fixture_payloads": 2,
+    "normalized_fixture_snapshots": 3,
+    "fixture_components": 1,
+    "fixture_bundles": 1,
+    "empirical_vendor_rows": 0,
+    "allowed_price_model_trials": 0
+  },
+  "fixture_capture_plan": [
+    {
+      "file": "tests/fixtures/te_calendar_pre_release.json",
+      "transport": "https_snapshot",
+      "request_started_at": "2030-01-10T13:28:59+00:00",
+      "received_at": "2030-01-10T13:29:00+00:00",
+      "received_monotonic_ns": 1000000000
+    },
+    {
+      "file": "tests/fixtures/te_calendar_pre_release.json",
+      "transport": "https_snapshot",
+      "request_started_at": "2030-01-10T13:29:29+00:00",
+      "received_at": "2030-01-10T13:29:30+00:00",
+      "received_monotonic_ns": 31000000000
+    },
+    {
+      "file": "tests/fixtures/te_calendar_post_release.json",
+      "transport": "websocket_calendar",
+      "request_started_at": "2030-01-10T13:30:00+00:00",
+      "received_at": "2030-01-10T13:30:01+00:00",
+      "received_monotonic_ns": 62000000000
+    }
+  ],
+  "failure_injections": [
+    "malformed_json_before_persistence",
+    "missing_provider_event_id",
+    "incomplete_rights_attestation",
+    "credential_in_endpoint_query",
+    "corrupt_content_addressed_blob"
+  ],
+  "completion_gates": {
+    "capture_contract_schema_valid": true,
+    "fixture_receipts": 3,
+    "unique_raw_blobs": 2,
+    "normalized_snapshots": 3,
+    "component_audits": 1,
+    "calendar_bundles": 1,
+    "structurally_eligible_fixture_components": 1,
+    "empirical_vendor_rows": 0,
+    "append_only_duplicate_observation": true,
+    "historical_and_stream_schema_parity": true,
+    "provider_and_receive_clocks_separate": true,
+    "deterministic_replay_hash": true,
+    "failure_injections_pass": true,
+    "credential_persistence_matches": 0,
+    "required_test_count": 46,
+    "authenticated_vendor_request_executed": false,
+    "price_model_executed": false,
+    "market_price_join_executed": false
+  },
+  "decision_rule": {
+    "READY_FOR_AUTHENTICATED_SHADOW_CAPTURE": "All offline capture, integrity, security, schema-parity and replay gates pass exactly as preregistered.",
+    "FAIL_CAPTURE_INTEGRITY": "Any payload is overwritten, replay drifts, a secret is persisted, a clock is conflated, an invalid right is accepted or a count/test gate fails."
+  },
+  "economic_decision": "Passing Step 3 does not authorize a price experiment. A licensed credential, written rights attestation and authenticated shadow observations are still required.",
+  "out_of_scope": [
+    "purchasing a vendor subscription",
+    "making an authenticated request without user-supplied credentials and rights attestation",
+    "using documentation examples as observations",
+    "market-price joining",
+    "price prediction",
+    "parameter fitting"
+  ]
+}
