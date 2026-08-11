@@ -1,0 +1,89 @@
+{
+  "trial_id": "phase5_trial_001",
+  "registered_at": "2026-08-11T00:00:00+09:00",
+  "purpose": "Cross-link Phase 3 immutable captures to Phase 4 release-window traces before any window can enter the empirical shadow-campaign ledger.",
+  "hypothesis": "A deterministic evidence-enrollment gate can prove that every referenced pre-release and release component exists in the immutable capture store, matches receive clocks and payload identities, agrees with the actual store audit, and cannot promote synthetic evidence.",
+  "inputs": {
+    "evidence_contract": "config/empirical_evidence_contract.json",
+    "capture_contract": "config/vendor_capture_contract.json",
+    "campaign_contract": "config/shadow_campaign_contract.json",
+    "synthetic_schedule": "tests/fixtures/phase5_release_schedule.json",
+    "synthetic_trace": "tests/fixtures/phase5_trace_linked.json",
+    "synthetic_pre_payload": "tests/fixtures/phase5_te_pre_release.json",
+    "synthetic_post_payload": "tests/fixtures/phase5_te_post_release.json"
+  },
+  "scope": {
+    "allowed_enrollment_pipeline_trials": 1,
+    "allowed_authenticated_vendor_requests": 0,
+    "synthetic_schedule_bundles": 1,
+    "synthetic_capture_observations": 2,
+    "synthetic_raw_blobs": 2,
+    "synthetic_normalized_snapshots": 4,
+    "synthetic_trace_events": 20,
+    "synthetic_capture_references": 3,
+    "empirical_windows_enrolled": 0,
+    "allowed_market_price_joins": 0,
+    "allowed_price_model_trials": 0
+  },
+  "policy": {
+    "stream_lead_seconds": 120,
+    "pre_snapshot_target_seconds": 60,
+    "pre_snapshot_max_age_seconds": 180,
+    "stream_tail_seconds": 120,
+    "schedule_max_age_seconds": 172800,
+    "minimum_clock_samples": 3,
+    "maximum_clock_offset_ms": 50.0,
+    "maximum_clock_rtt_ms": 200.0,
+    "maximum_telemetry_gap_seconds": 35.0,
+    "maximum_reconnect_gap_seconds": 20.0,
+    "component_completion_seconds": 5.0,
+    "maximum_capture_trace_delta_ms": 1.0,
+    "minimum_complete_windows": 6,
+    "minimum_complete_cpi_windows": 3,
+    "minimum_complete_nfp_windows": 3
+  },
+  "failure_injections": {
+    "missing_capture_reference": "missing_capture_reference",
+    "unknown_capture_id": "unknown_capture_id",
+    "capture_trace_clock_drift": "capture_trace_clock_mismatch",
+    "store_integrity_claim_mismatch": "store_integrity_claim_mismatch",
+    "component_payload_mismatch": "component_not_in_capture",
+    "synthetic_license_spoof": "synthetic_capture_not_empirical",
+    "duplicate_ledger_record": "duplicate_evidence_package"
+  },
+  "completion_gates": {
+    "evidence_contract_schema_valid": true,
+    "capture_observations": 2,
+    "raw_blobs": 2,
+    "normalized_snapshots": 4,
+    "trace_events": 20,
+    "capture_references": 3,
+    "structurally_complete": true,
+    "synthetic_enrollable": false,
+    "empirical_windows_enrolled": 0,
+    "all_failure_injections_rejected": true,
+    "deterministic_package_hash": true,
+    "required_test_count": 85,
+    "credential_present": false,
+    "rights_attestation_present": false,
+    "authenticated_vendor_request_executed": false,
+    "market_price_join_executed": false,
+    "price_model_executed": false
+  },
+  "decision_rule": {
+    "READY_FOR_LICENSED_EVIDENCE_ENROLLMENT": "The offline cross-link, store-integrity, replay, ledger and failure-injection checks pass exactly as preregistered.",
+    "FAIL_EVIDENCE_ENROLLMENT": "A capture reference, clock, payload identity, store claim, ledger, preregistration or test gate fails.",
+    "PROMOTE_SHADOW_CAMPAIGN": "Reserved for six distinct enrolled licensed windows, including three CPI and three NFP windows."
+  },
+  "external_status": "WAITING_FOR_VENDOR_CREDENTIAL_RIGHTS_AND_RELEASE_WINDOWS",
+  "economic_decision": "No market-price join or model fitting is authorized until the registered licensed campaign threshold is met and a separate price trial is preregistered.",
+  "out_of_scope": [
+    "opening an authenticated connection without user-supplied credentials and written rights",
+    "treating a trace assertion as proof of raw-store integrity",
+    "counting synthetic or documentation payloads as empirical evidence",
+    "historical price joining",
+    "price prediction",
+    "parameter fitting",
+    "live order generation"
+  ]
+}
