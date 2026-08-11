@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from macro_dislocation.capture_authorization import _seal_capture_permit
 from macro_dislocation.pit_events import RIGHTS, audit_components
 from macro_dislocation.vendor_capture import (
     VendorCaptureStore,
@@ -19,6 +20,7 @@ from macro_dislocation.vendor_capture import (
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
+AUTHORIZATION_KEY = "a" * 32
 
 
 def full_rights() -> dict[str, bool]:
@@ -52,6 +54,26 @@ def valid_attestation() -> dict[str, object]:
         "license_class": "licensed_internal_research",
         "rights": full_rights(),
     }
+
+
+def write_capture_permit(root: Path, action: str) -> Path:
+    core = {
+        "permit_status": "AUTHORIZED",
+        "action": action,
+        "source_event_id": "BLS-TEST-2026-01",
+        "event_family": "CPI",
+        "scheduled_at": "2026-01-01T12:30:00+00:00",
+        "issued_at": "2026-01-01T12:00:00+00:00",
+        "not_before": "2026-01-01T11:00:00+00:00",
+        "not_after": "2026-01-01T13:00:00+00:00",
+        "roster_sha256": "1" * 64,
+        "access_receipt_id": "access:test",
+        "access_receipt_signature": "2" * 64,
+    }
+    permit = _seal_capture_permit(core, AUTHORIZATION_KEY.encode("utf-8"))
+    path = root / f"{action}.json"
+    path.write_text(json.dumps(permit), encoding="utf-8")
+    return path
 
 
 class VendorCaptureTests(unittest.TestCase):
@@ -214,15 +236,25 @@ class VendorCaptureTests(unittest.TestCase):
             root = Path(directory)
             attestation = root / "rights.json"
             attestation.write_text(json.dumps(valid_attestation()), encoding="utf-8")
-            with patch.dict(os.environ, {}, clear=True):
+            permit = write_capture_permit(root, "binding_snapshot")
+            with patch.dict(
+                os.environ,
+                {"MACRO_LAB_AUTHORIZATION_KEY": AUTHORIZATION_KEY},
+                clear=True,
+            ), patch(
+                "macro_dislocation.vendor_capture.utc_now",
+                return_value="2026-01-01T12:00:00+00:00",
+            ):
                 with self.assertRaisesRegex(RuntimeError, "TRADING_ECONOMICS_API_KEY"):
                     capture_authenticated_snapshot(
                         VendorCaptureStore(root / "store"),
+                        authorization_permit_path=permit,
+                        permit_action="binding_snapshot",
                         rights_attestation_path=attestation,
                         country="united states",
                         indicators=["cpi"],
                         start="2026-01-01",
-                        end="2026-01-02",
+                        end="2026-01-01",
                     )
 
     def test_reflected_credential_is_rejected_before_snapshot_persistence(self) -> None:
@@ -243,17 +275,28 @@ class VendorCaptureTests(unittest.TestCase):
             attestation = root / "rights.json"
             attestation.write_text(json.dumps(valid_attestation()), encoding="utf-8")
             store = VendorCaptureStore(root / "store")
+            permit = write_capture_permit(root, "binding_snapshot")
             with patch.dict(
-                os.environ, {"TRADING_ECONOMICS_API_KEY": "vendor-secret"}, clear=True
+                os.environ,
+                {
+                    "TRADING_ECONOMICS_API_KEY": "vendor-secret",
+                    "MACRO_LAB_AUTHORIZATION_KEY": AUTHORIZATION_KEY,
+                },
+                clear=True,
+            ), patch(
+                "macro_dislocation.vendor_capture.utc_now",
+                return_value="2026-01-01T12:00:00+00:00",
             ), patch("macro_dislocation.vendor_capture.urlopen", return_value=Response()):
                 with self.assertRaisesRegex(RuntimeError, "reflected"):
                     capture_authenticated_snapshot(
                         store,
+                        authorization_permit_path=permit,
+                        permit_action="binding_snapshot",
                         rights_attestation_path=attestation,
                         country="united states",
                         indicators=["cpi"],
                         start="2026-01-01",
-                        end="2026-01-02",
+                        end="2026-01-01",
                     )
             self.assertEqual(store.observations(), [])
 
@@ -264,12 +307,137 @@ class VendorCaptureTests(unittest.TestCase):
             attestation.write_text(json.dumps(valid_attestation()), encoding="utf-8")
             store = VendorCaptureStore(root / "store")
             lines = ['{"topic":"calendar","echo":"vendor-secret"}\n']
+            permit = write_capture_permit(root, "calendar_stream")
             with patch.dict(
-                os.environ, {"TRADING_ECONOMICS_API_KEY": "vendor-secret"}, clear=True
+                os.environ,
+                {
+                    "TRADING_ECONOMICS_API_KEY": "vendor-secret",
+                    "MACRO_LAB_AUTHORIZATION_KEY": AUTHORIZATION_KEY,
+                },
+                clear=True,
+            ), patch(
+                "macro_dislocation.vendor_capture.utc_now",
+                return_value="2026-01-01T12:00:00+00:00",
             ):
                 with self.assertRaisesRegex(RuntimeError, "reflected"):
                     capture_stream_jsonl(
-                        store, lines, rights_attestation_path=attestation
+                        store,
+                        lines,
+                        authorization_permit_path=permit,
+                        rights_attestation_path=attestation,
+                    )
+            self.assertEqual(store.observations(), [])
+
+    def test_authenticated_snapshot_persists_signed_permit(self) -> None:
+        class Response:
+            status = 200
+
+            def __enter__(self) -> "Response":
+                return self
+
+            def __exit__(self, *args: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return (FIXTURES / "te_calendar_pre_release.json").read_bytes()
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            attestation = root / "rights.json"
+            attestation.write_text(json.dumps(valid_attestation()), encoding="utf-8")
+            permit_path = write_capture_permit(root, "binding_snapshot")
+            permit = json.loads(permit_path.read_text(encoding="utf-8"))
+            with patch.dict(
+                os.environ,
+                {
+                    "TRADING_ECONOMICS_API_KEY": "vendor-secret",
+                    "MACRO_LAB_AUTHORIZATION_KEY": AUTHORIZATION_KEY,
+                },
+                clear=True,
+            ), patch(
+                "macro_dislocation.vendor_capture.utc_now",
+                return_value="2026-01-01T12:00:00+00:00",
+            ), patch("macro_dislocation.vendor_capture.urlopen", return_value=Response()):
+                result = capture_authenticated_snapshot(
+                    VendorCaptureStore(root / "store"),
+                    authorization_permit_path=permit_path,
+                    permit_action="binding_snapshot",
+                    rights_attestation_path=attestation,
+                    country="united states",
+                    indicators=["cpi"],
+                    start="2026-01-01",
+                    end="2026-01-01",
+                )
+            self.assertEqual(result.observation["authorization_permit"], permit)
+            self.assertEqual(
+                capture_observation_id(result.observation),
+                result.observation["capture_id"],
+            )
+
+    def test_authenticated_stream_persists_signed_permit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            attestation = root / "rights.json"
+            attestation.write_text(json.dumps(valid_attestation()), encoding="utf-8")
+            permit_path = write_capture_permit(root, "calendar_stream")
+            permit = json.loads(permit_path.read_text(encoding="utf-8"))
+            message = (FIXTURES / "te_calendar_post_release.json").read_text(
+                encoding="utf-8"
+            )
+            with patch.dict(
+                os.environ,
+                {
+                    "TRADING_ECONOMICS_API_KEY": "vendor-secret",
+                    "MACRO_LAB_AUTHORIZATION_KEY": AUTHORIZATION_KEY,
+                },
+                clear=True,
+            ), patch(
+                "macro_dislocation.vendor_capture.utc_now",
+                return_value="2026-01-01T12:00:00+00:00",
+            ):
+                results = capture_stream_jsonl(
+                    VendorCaptureStore(root / "store"),
+                    [message + "\n"],
+                    authorization_permit_path=permit_path,
+                    rights_attestation_path=attestation,
+                )
+            self.assertEqual(len(results), 1)
+            self.assertEqual(results[0].observation["authorization_permit"], permit)
+
+    def test_stream_rechecks_permit_expiry_for_each_message(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            attestation = root / "rights.json"
+            attestation.write_text(json.dumps(valid_attestation()), encoding="utf-8")
+            permit_path = write_capture_permit(root, "calendar_stream")
+            message = (FIXTURES / "te_calendar_post_release.json").read_text(
+                encoding="utf-8"
+            )
+            times = iter(
+                [
+                    "2026-01-01T12:00:00+00:00",
+                    "2026-01-01T12:00:00+00:00",
+                    "2026-01-01T13:00:01+00:00",
+                ]
+            )
+            store = VendorCaptureStore(root / "store")
+            with patch.dict(
+                os.environ,
+                {
+                    "TRADING_ECONOMICS_API_KEY": "vendor-secret",
+                    "MACRO_LAB_AUTHORIZATION_KEY": AUTHORIZATION_KEY,
+                },
+                clear=True,
+            ), patch(
+                "macro_dislocation.vendor_capture.utc_now",
+                side_effect=lambda: next(times),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "capture_permit_expired"):
+                    capture_stream_jsonl(
+                        store,
+                        [message + "\n"],
+                        authorization_permit_path=permit_path,
+                        rights_attestation_path=attestation,
                     )
             self.assertEqual(store.observations(), [])
 

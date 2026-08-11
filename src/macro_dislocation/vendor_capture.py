@@ -13,6 +13,12 @@ from urllib.error import HTTPError
 from urllib.parse import quote, urlencode, urlsplit, urlunsplit
 from urllib.request import Request, urlopen
 
+from .capture_authorization import (
+    PERMIT_FIELDS,
+    load_valid_capture_permit,
+    permit_covers_date_range,
+    validate_capture_permit,
+)
 from .pit_events import RIGHTS, PitSnapshot, normalize_trading_economics_snapshot
 
 
@@ -46,6 +52,8 @@ def capture_observation_id(observation: dict[str, Any]) -> str:
         for name in CAPTURE_OBSERVATION_FIELDS
         if name != "capture_id"
     }
+    if "authorization_permit" in observation:
+        core["authorization_permit"] = observation["authorization_permit"]
     return sha256_bytes(
         json.dumps(core, sort_keys=True, separators=(",", ":")).encode("utf-8")
     )
@@ -197,6 +205,7 @@ class VendorCaptureStore:
         license_class: str,
         rights_profile: dict[str, bool],
         provenance: str,
+        authorization_permit: dict[str, Any] | None = None,
     ) -> CaptureResult:
         rows = _json_rows(payload)
         started = _aware_utc(request_started_at)
@@ -233,6 +242,15 @@ class VendorCaptureStore:
             },
             "provenance": provenance,
         }
+        if authorization_permit is not None:
+            missing = [
+                name for name in PERMIT_FIELDS if name not in authorization_permit
+            ]
+            if missing:
+                raise ValueError("capture authorization permit schema mismatch")
+            core["authorization_permit"] = {
+                name: authorization_permit[name] for name in PERMIT_FIELDS
+            }
         observation = {"capture_id": "", **core}
         observation["capture_id"] = capture_observation_id(observation)
         inserted = self._write_blob_once(payload, digest)
@@ -255,6 +273,14 @@ class VendorCaptureStore:
                 if missing:
                     raise ValueError(
                         f"observation {line_number} missing fields: {', '.join(missing)}"
+                    )
+                authorization = row.get("authorization_permit")
+                if authorization is not None and (
+                    not isinstance(authorization, dict)
+                    or any(name not in authorization for name in PERMIT_FIELDS)
+                ):
+                    raise ValueError(
+                        f"observation {line_number} has invalid authorization permit"
                     )
                 rows.append(row)
         return rows
@@ -362,6 +388,8 @@ def _calendar_url(
 def capture_authenticated_snapshot(
     store: VendorCaptureStore,
     *,
+    authorization_permit_path: Path,
+    permit_action: str,
     rights_attestation_path: Path,
     country: str,
     indicators: list[str],
@@ -370,6 +398,13 @@ def capture_authenticated_snapshot(
     timeout: float = 30.0,
 ) -> CaptureResult:
     """Capture one authenticated HTTPS response without persisting its credential."""
+    if permit_action not in {"binding_snapshot", "pre_release_snapshot"}:
+        raise RuntimeError("snapshot capture requires a snapshot authorization action")
+    permit = load_valid_capture_permit(
+        authorization_permit_path, permit_action, utc_now()
+    )
+    if not permit_covers_date_range(permit, start, end):
+        raise RuntimeError("capture authorization does not cover the requested date range")
     license_class, rights = load_rights_attestation(rights_attestation_path)
     credential = os.environ.get("TRADING_ECONOMICS_API_KEY", "")
     if not credential:
@@ -414,6 +449,7 @@ def capture_authenticated_snapshot(
         license_class=license_class,
         rights_profile=rights,
         provenance="authenticated_api_snapshot",
+        authorization_permit=permit,
     )
 
 
@@ -421,10 +457,14 @@ def capture_stream_jsonl(
     store: VendorCaptureStore,
     lines: Iterable[str],
     *,
+    authorization_permit_path: Path,
     rights_attestation_path: Path,
     endpoint: str = "wss://stream.tradingeconomics.com/",
 ) -> list[CaptureResult]:
     """Capture JSONL messages emitted by an authenticated calendar stream client."""
+    permit = load_valid_capture_permit(
+        authorization_permit_path, "calendar_stream", utc_now()
+    )
     license_class, rights = load_rights_attestation(rights_attestation_path)
     if not os.environ.get("TRADING_ECONOMICS_API_KEY"):
         raise RuntimeError("TRADING_ECONOMICS_API_KEY is required")
@@ -433,6 +473,11 @@ def capture_stream_jsonl(
     wait_started = utc_now()
     for line in lines:
         received = utc_now()
+        permit_issues = validate_capture_permit(
+            permit, "calendar_stream", received
+        )
+        if permit_issues:
+            raise RuntimeError(f"capture authorization denied: {permit_issues[0]}")
         if not line.strip():
             wait_started = received
             continue
@@ -451,6 +496,7 @@ def capture_stream_jsonl(
                 license_class=license_class,
                 rights_profile=rights,
                 provenance="authenticated_calendar_stream",
+                authorization_permit=permit,
             )
         )
         wait_started = utc_now()

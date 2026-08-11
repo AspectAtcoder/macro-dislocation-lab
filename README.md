@@ -118,6 +118,20 @@ injectionと全119テストがPASSしました。詳細は
 [Phase 7 protocol](docs/PHASE7_PROTOCOL.md)、
 [provider binding runbook](docs/PROVIDER_BINDING_RUNBOOK.md)を参照してください。
 
+## Phase 8 status
+
+Phase 8は2026-08-11に
+**READY_FOR_SIGNED_CAPTURE_AUTHORIZATION_PENDING_EXTERNAL_ACCESS** で完了しました。
+24時間前のaccess-ready状態をHMAC-SHA256署名receiptとして保存し、認証付きsnapshot／stream
+の前に、用途別・短時間の署名permitを必須にする層です。鍵とcredentialそのものは保存しません。
+
+最初のCPIはaccess-ready期限を4,273秒超過していたため、receipt、permit、vendor requestを
+すべて0件のまま確定しました。次候補は2026-09-04 12:30 UTCの雇用統計で、公式日程を48時間
+以内に再確認し、2026-09-03 12:30 UTCまでに認可する必要があります。8 failure injectionと
+全140テストがPASSしました。詳細は[Phase 8 result](docs/PHASE8_RESULT.md)、
+[Phase 8 protocol](docs/PHASE8_PROTOCOL.md)、
+[capture authorization runbook](docs/CAPTURE_AUTHORIZATION_RUNBOOK.md)を参照してください。
+
 ## Experiment 0
 
 発表直前の最後の気配を基準に、+1秒、+5秒、+30秒、+1分、+5分、+15分、
@@ -209,6 +223,12 @@ macro-lab phase7-complete
 # Phase 7: preregistration、capture gate、handoff hashを監査
 macro-lab verify-phase7
 
+# Phase 8: deadline、HMAC receipt／permit、capture fail-closedを実行
+macro-lab phase8-complete
+
+# Phase 8: preregistration、失敗注入、全回帰試験を独立監査
+macro-lab verify-phase8
+
 # テスト
 python -m unittest discover -s tests -v
 ```
@@ -216,7 +236,8 @@ python -m unittest discover -s tests -v
 生成物は `artifacts/phase0_complete_2024/`、`artifacts/phase1_complete/`、
 `artifacts/phase2_complete/`、`artifacts/phase3_complete/`、
 `artifacts/phase4_complete/`、`artifacts/phase5_complete/`、
-`artifacts/phase6_complete/`、`artifacts/phase7_complete/` のCSV、JSON、
+`artifacts/phase6_complete/`、`artifacts/phase7_complete/`、
+`artifacts/phase8_complete/` のCSV、JSON、
 Markdown、SVGです。
 生データ・処理済み相場データ・生成物はGit管理外です。
 

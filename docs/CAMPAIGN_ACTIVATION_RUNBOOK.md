@@ -13,7 +13,9 @@ macro-lab vendor-access-preflight \
   --rights-attestation data/private/trading_economics_rights.json
 ```
 
-`ready=true`でなければ通信を開始しない。出力にはcredential本体を含めない。
+`ready=true`でなければ通信を開始しない。出力にはcredential本体を含めない。さらにPhase 8
+以降は、独立した32文字以上の`MACRO_LAB_AUTHORIZATION_KEY`をsecret managerから環境へ
+注入する。
 
 ## 2. BLS公式日程を48時間以内に再確認する
 
@@ -38,10 +40,15 @@ macro-lab campaign-roster-status \
 credentialあり、rights有効のすべてが必要。`provider_component_ids_resolved=false`は、
 pre-release vendor snapshot取得後にprovider IDを解決するまで残す。
 
+`READY_FOR_ACTIVATION`の間に[capture authorization runbook](CAPTURE_AUTHORIZATION_RUNBOOK.md)
+の`authorize-campaign-access`を実行し、署名付きaccess receiptを発行する。期限後に時刻を
+巻き戻すオプションはなく、receiptがなければそのreleaseは欠測のまま残す。
+
 ## 4. rehearsalとshadow capture
 
 発表2時間前までにNTP、二重時計、HTTPS snapshot、websocket heartbeat、reconnect、raw
-store、空き容量を確認する。以後は[shadow campaign runbook](SHADOW_CAMPAIGN_RUNBOOK.md)、
+store、空き容量を確認する。各capture直前に用途別permitを発行する。以後は
+[shadow campaign runbook](SHADOW_CAMPAIGN_RUNBOOK.md)、
 [provider binding runbook](PROVIDER_BINDING_RUNBOOK.md)、
 [evidence enrollment runbook](EVIDENCE_ENROLLMENT_RUNBOOK.md)に従う。
 
