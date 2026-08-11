@@ -10,7 +10,18 @@ from pathlib import Path
 
 from .calendar_data import load_event_times, normalize_calendar
 from .baseline import run_baseline
-from .campaign_roster import campaign_readiness, load_campaign_roster
+from .campaign_roster import (
+    CampaignRoster,
+    CampaignWindow,
+    activation_packet,
+    campaign_readiness,
+    load_campaign_roster,
+)
+from .capture_authorization import (
+    issue_access_authorization,
+    issue_capture_permit,
+    write_signed_artifact_once,
+)
 from .dukascopy import event_hours, write_quote_csv
 from .experiment import run_experiment
 from .evidence_enrollment import (
@@ -27,6 +38,7 @@ from .phase4 import run_phase4
 from .phase5 import run_phase5
 from .phase6 import run_phase6
 from .phase7 import run_phase7
+from .phase8 import run_phase8
 from .shadow_campaign import (
     ShadowTraceStore,
     audit_shadow_trace,
@@ -47,6 +59,7 @@ from .verify_phase4 import verify_phase4
 from .verify_phase5 import verify_phase5
 from .verify_phase6 import verify_phase6
 from .verify_phase7 import verify_phase7
+from .verify_phase8 import verify_phase8
 
 CONSENSUS_URL = "https://huggingface.co/datasets/Ehsanrs2/Forex_Factory_Calendar"
 
@@ -201,6 +214,8 @@ def _verify_phase3(args: argparse.Namespace) -> None:
 def _capture_te_snapshot(args: argparse.Namespace) -> None:
     result = capture_authenticated_snapshot(
         VendorCaptureStore(Path(args.store)),
+        authorization_permit_path=Path(args.authorization_permit),
+        permit_action=args.permit_action,
         rights_attestation_path=Path(args.rights_attestation),
         country=args.country,
         indicators=args.indicator,
@@ -225,6 +240,7 @@ def _capture_te_stream_jsonl(args: argparse.Namespace) -> None:
     results = capture_stream_jsonl(
         VendorCaptureStore(Path(args.store)),
         sys.stdin,
+        authorization_permit_path=Path(args.authorization_permit),
         rights_attestation_path=Path(args.rights_attestation),
         endpoint=args.endpoint,
     )
@@ -392,7 +408,7 @@ def _campaign_roster_status(args: argparse.Namespace) -> None:
     rights = Path(args.rights_attestation) if args.rights_attestation else None
     preflight = vendor_access_preflight(rights)
     roster = load_campaign_roster(Path(args.roster), specification["policy"])
-    evaluated_at = args.as_of or datetime.now(timezone.utc).isoformat()
+    evaluated_at = datetime.now(timezone.utc).isoformat()
     result = campaign_readiness(
         roster, evaluated_at, preflight, specification["policy"]
     )
@@ -434,6 +450,97 @@ def _verify_phase7(args: argparse.Namespace) -> None:
     )
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if not result["passed"]:
+        raise SystemExit(1)
+
+
+def _phase8(args: argparse.Namespace) -> None:
+    result = run_phase8(
+        Path(args.specification),
+        Path(args.authorization_contract),
+        Path(args.phase6_specification),
+        Path(args.roster),
+        Path(args.phase4_specification),
+        Path(args.rights_schema),
+        Path(args.phase7_specification),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase8(args: argparse.Namespace) -> None:
+    result = verify_phase8(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.authorization_contract),
+        Path(args.phase6_specification),
+        Path(args.roster),
+        Path(args.phase4_specification),
+        Path(args.rights_schema),
+        Path(args.phase7_specification),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
+def _select_roster_window(
+    roster: CampaignRoster, source_event_id: str
+) -> CampaignWindow:
+    matching = [
+        window for window in roster.windows if window.source_event_id == source_event_id
+    ]
+    if len(matching) != 1:
+        raise SystemExit(
+            f"source-event-id must select exactly one roster window: {source_event_id}"
+        )
+    return matching[0]
+
+
+def _authorize_campaign_access(args: argparse.Namespace) -> None:
+    phase6 = json.loads(Path(args.phase6_specification).read_text(encoding="utf-8"))
+    phase8 = json.loads(Path(args.phase8_specification).read_text(encoding="utf-8"))
+    roster = load_campaign_roster(Path(args.roster), phase6["policy"])
+    window = _select_roster_window(roster, args.source_event_id)
+    rights_path = Path(args.rights_attestation)
+    preflight = vendor_access_preflight(rights_path)
+    evaluated_at = datetime.now(timezone.utc).isoformat()
+    packet = activation_packet(
+        roster, window, evaluated_at, preflight, phase6["policy"]
+    )
+    decision = issue_access_authorization(
+        roster, window, packet, rights_path, phase8["policy"]
+    )
+    receipt = decision["access_receipt"]
+    if receipt is not None:
+        write_signed_artifact_once(Path(args.output), receipt)
+    print(json.dumps(decision, ensure_ascii=False, indent=2))
+    if receipt is None:
+        raise SystemExit(1)
+
+
+def _issue_capture_permit(args: argparse.Namespace) -> None:
+    phase6 = json.loads(Path(args.phase6_specification).read_text(encoding="utf-8"))
+    phase8 = json.loads(Path(args.phase8_specification).read_text(encoding="utf-8"))
+    roster = load_campaign_roster(Path(args.roster), phase6["policy"])
+    window = _select_roster_window(roster, args.source_event_id)
+    receipt = json.loads(Path(args.access_receipt).read_text(encoding="utf-8"))
+    evaluated_at = args.as_of or datetime.now(timezone.utc).isoformat()
+    decision = issue_capture_permit(
+        receipt,
+        roster,
+        window,
+        args.action,
+        evaluated_at,
+        phase8["policy"],
+    )
+    permit = decision["capture_permit"]
+    if permit is not None:
+        write_signed_artifact_once(Path(args.output), permit)
+    print(json.dumps(decision, ensure_ascii=False, indent=2))
+    if permit is None:
         raise SystemExit(1)
 
 
@@ -600,6 +707,12 @@ def parser() -> argparse.ArgumentParser:
     verify3.set_defaults(func=_verify_phase3)
 
     te_snapshot = commands.add_parser("capture-te-snapshot")
+    te_snapshot.add_argument("--authorization-permit", required=True)
+    te_snapshot.add_argument(
+        "--permit-action",
+        choices=("binding_snapshot", "pre_release_snapshot"),
+        required=True,
+    )
     te_snapshot.add_argument("--rights-attestation", required=True)
     te_snapshot.add_argument("--store", default="data/raw/vendor_capture_store")
     te_snapshot.add_argument("--country", default="united states")
@@ -610,6 +723,7 @@ def parser() -> argparse.ArgumentParser:
     te_snapshot.set_defaults(func=_capture_te_snapshot)
 
     te_stream = commands.add_parser("capture-te-stream-jsonl")
+    te_stream.add_argument("--authorization-permit", required=True)
     te_stream.add_argument("--rights-attestation", required=True)
     te_stream.add_argument("--store", default="data/raw/vendor_capture_store")
     te_stream.add_argument(
@@ -811,6 +925,90 @@ def parser() -> argparse.ArgumentParser:
     verify7.add_argument("--trial-registry", default="config/trial_registry.csv")
     verify7.add_argument("--project-root", default=".")
     verify7.set_defaults(func=_verify_phase7)
+
+    phase8 = commands.add_parser("phase8-complete")
+    phase8.add_argument("--specification", default="config/phase8_trial_001.json")
+    phase8.add_argument(
+        "--authorization-contract", default="config/capture_authorization_contract.json"
+    )
+    phase8.add_argument(
+        "--phase6-specification", default="config/phase6_trial_001.json"
+    )
+    phase8.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    phase8.add_argument(
+        "--phase4-specification", default="config/phase4_trial_001.json"
+    )
+    phase8.add_argument(
+        "--rights-schema", default="config/vendor_rights_attestation.schema.json"
+    )
+    phase8.add_argument(
+        "--phase7-specification", default="config/phase7_trial_001.json"
+    )
+    phase8.add_argument("--output-dir", default="artifacts/phase8_complete")
+    phase8.add_argument("--project-root", default=".")
+    phase8.set_defaults(func=_phase8)
+
+    verify8 = commands.add_parser("verify-phase8")
+    verify8.add_argument("--output-dir", default="artifacts/phase8_complete")
+    verify8.add_argument("--specification", default="config/phase8_trial_001.json")
+    verify8.add_argument(
+        "--authorization-contract", default="config/capture_authorization_contract.json"
+    )
+    verify8.add_argument(
+        "--phase6-specification", default="config/phase6_trial_001.json"
+    )
+    verify8.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    verify8.add_argument(
+        "--phase4-specification", default="config/phase4_trial_001.json"
+    )
+    verify8.add_argument(
+        "--rights-schema", default="config/vendor_rights_attestation.schema.json"
+    )
+    verify8.add_argument(
+        "--phase7-specification", default="config/phase7_trial_001.json"
+    )
+    verify8.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify8.add_argument("--project-root", default=".")
+    verify8.set_defaults(func=_verify_phase8)
+
+    authorize = commands.add_parser("authorize-campaign-access")
+    authorize.add_argument("--source-event-id", required=True)
+    authorize.add_argument("--rights-attestation", required=True)
+    authorize.add_argument("--output", required=True)
+    authorize.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    authorize.add_argument(
+        "--phase6-specification", default="config/phase6_trial_001.json"
+    )
+    authorize.add_argument(
+        "--phase8-specification", default="config/phase8_trial_001.json"
+    )
+    authorize.set_defaults(func=_authorize_campaign_access)
+
+    permit = commands.add_parser("issue-capture-permit")
+    permit.add_argument("--source-event-id", required=True)
+    permit.add_argument("--access-receipt", required=True)
+    permit.add_argument(
+        "--action",
+        choices=("binding_snapshot", "pre_release_snapshot", "calendar_stream"),
+        required=True,
+    )
+    permit.add_argument("--output", required=True)
+    permit.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    permit.add_argument(
+        "--phase6-specification", default="config/phase6_trial_001.json"
+    )
+    permit.add_argument(
+        "--phase8-specification", default="config/phase8_trial_001.json"
+    )
+    permit.set_defaults(func=_issue_capture_permit)
 
     access = commands.add_parser("vendor-access-preflight")
     access.add_argument("--rights-attestation")

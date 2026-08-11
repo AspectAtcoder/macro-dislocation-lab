@@ -162,3 +162,16 @@ The completed trial used original synthetic provider IDs and made no network
 request. It produced one structurally valid Phase 4 schedule preview but zero
 executable handoffs. Production remains blocked pending licensed access and a
 prospectively captured snapshot.
+
+## Phase 8 signed capture authorization
+
+Phase 8 does not add a news provider. It closes the operational gap between the
+24-hour access-ready deadline and release-time collection. A deadline-compliant
+access receipt binds the exact BLS roster and licensed-access evidence; short-lived
+HMAC permits then gate Trading Economics snapshot and calendar-stream capture before
+network or input processing.
+
+The first August CPI deadline was already missed, so no historical API response or
+current official page may be relabelled as its live receipt. The next candidate is
+the September 4 Employment Situation release, conditional on a new official BLS
+schedule check inside 48 hours and access authorization by September 3 12:30 UTC.
