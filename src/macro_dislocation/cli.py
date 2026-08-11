@@ -39,6 +39,16 @@ from .phase5 import run_phase5
 from .phase6 import run_phase6
 from .phase7 import run_phase7
 from .phase8 import run_phase8
+from .phase9 import run_phase9
+from .phase10 import build_empirical_pit_labels, run_phase10
+from .phase11 import run_phase11, run_registered_backtest
+from .phase12 import run_phase12
+from .forward_test import (
+    ForwardJournal,
+    record_paper_signal,
+    replay_forward_events,
+    settle_paper_signal,
+)
 from .shadow_campaign import (
     ShadowTraceStore,
     audit_shadow_trace,
@@ -60,6 +70,10 @@ from .verify_phase5 import verify_phase5
 from .verify_phase6 import verify_phase6
 from .verify_phase7 import verify_phase7
 from .verify_phase8 import verify_phase8
+from .verify_phase9 import verify_phase9
+from .verify_phase10 import verify_phase10
+from .verify_phase11 import verify_phase11
+from .verify_phase12 import verify_phase12
 
 CONSENSUS_URL = "https://huggingface.co/datasets/Ehsanrs2/Forex_Factory_Calendar"
 
@@ -484,6 +498,185 @@ def _verify_phase8(args: argparse.Namespace) -> None:
     print(json.dumps(result, ensure_ascii=False, indent=2))
     if not result["passed"]:
         raise SystemExit(1)
+
+
+def _phase9(args: argparse.Namespace) -> None:
+    result = run_phase9(
+        Path(args.specification),
+        Path(args.phase8_specification),
+        Path(args.roster),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase9(args: argparse.Namespace) -> None:
+    result = verify_phase9(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.phase8_specification),
+        Path(args.roster),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
+def _phase10(args: argparse.Namespace) -> None:
+    result = run_phase10(
+        Path(args.specification),
+        Path(args.events),
+        Path(args.phase9_specification),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase10(args: argparse.Namespace) -> None:
+    result = verify_phase10(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.events),
+        Path(args.phase9_specification),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
+def _phase11(args: argparse.Namespace) -> None:
+    result = run_phase11(
+        Path(args.specification),
+        Path(args.phase10_specification),
+        Path(args.labels),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase11(args: argparse.Namespace) -> None:
+    result = verify_phase11(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.phase10_specification),
+        Path(args.labels),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
+def _phase12(args: argparse.Namespace) -> None:
+    result = run_phase12(
+        Path(args.specification),
+        Path(args.phase11_specification),
+        Path(args.labels),
+        Path(args.model),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _verify_phase12(args: argparse.Namespace) -> None:
+    result = verify_phase12(
+        Path(args.output_dir),
+        Path(args.specification),
+        Path(args.phase11_specification),
+        Path(args.labels),
+        Path(args.model),
+        Path(args.trial_registry),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if not result["passed"]:
+        raise SystemExit(1)
+
+
+def _build_pit_labels(args: argparse.Namespace) -> None:
+    result = build_empirical_pit_labels(
+        Path(args.specification),
+        Path(args.features),
+        Path(args.quotes),
+        Path(args.evidence_ledger),
+        Path(args.output_dir),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _registered_backtest(args: argparse.Namespace) -> None:
+    result = run_registered_backtest(
+        Path(args.specification),
+        Path(args.labels),
+        Path(args.trial_registry),
+        Path(args.output_dir),
+        project_root=Path(args.project_root),
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+def _paper_forward_status(args: argparse.Namespace) -> None:
+    events = ForwardJournal(Path(args.journal)).events()
+    print(json.dumps(replay_forward_events(events), ensure_ascii=False, indent=2))
+
+
+def _paper_forward_signal(args: argparse.Namespace) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    journal = ForwardJournal(Path(args.journal))
+    model = json.loads(Path(args.model).read_text(encoding="utf-8"))
+    signal_input = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    specification = json.loads(Path(args.specification).read_text(encoding="utf-8"))
+    phase11 = json.loads(Path(args.phase11_specification).read_text(encoding="utf-8"))
+    if "synthetic_fixture" in model.get("training_provenance", []):
+        raise SystemExit("prospective paper signals require a non-synthetic model")
+    packages = {
+        package["package_id"]: package
+        for package in EvidenceLedger(Path(args.evidence_ledger)).packages()
+    }
+    evidence_id = str(signal_input.get("evidence_package_id") or "")
+    package = packages.get(evidence_id)
+    if package is None:
+        raise SystemExit("prospective paper signal evidence is not enrolled")
+    if (
+        package.get("scheduled_at") != signal_input.get("scheduled_at")
+        or str(package.get("event_family") or "").upper()
+        != str(signal_input.get("event_family") or "").upper()
+    ):
+        raise SystemExit("prospective paper signal evidence identity mismatch")
+    training_evidence = set(model.get("training_evidence_package_ids", []))
+    if not training_evidence or not training_evidence.issubset(packages):
+        raise SystemExit("model training evidence is not fully enrolled")
+    event = record_paper_signal(
+        journal,
+        model,
+        signal_input,
+        now=now,
+        policy=specification["policy"],
+        kill_switch=not args.clear_kill_switch,
+        trade_threshold_bp=float(phase11["model"]["trade_threshold_bp"]),
+    )
+    print(json.dumps(event, ensure_ascii=False, indent=2))
+
+
+def _paper_forward_settle(args: argparse.Namespace) -> None:
+    event = settle_paper_signal(
+        ForwardJournal(Path(args.journal)),
+        args.signal_id,
+        occurred_at=datetime.now(timezone.utc).isoformat(),
+        exit_bid=float(args.exit_bid),
+        exit_ask=float(args.exit_ask),
+        provenance=args.provenance,
+    )
+    print(json.dumps(event, ensure_ascii=False, indent=2))
 
 
 def _select_roster_window(
@@ -974,6 +1167,146 @@ def parser() -> argparse.ArgumentParser:
     verify8.add_argument("--trial-registry", default="config/trial_registry.csv")
     verify8.add_argument("--project-root", default=".")
     verify8.set_defaults(func=_verify_phase8)
+
+    phase9 = commands.add_parser("phase9-complete")
+    phase9.add_argument("--specification", default="config/phase9_trial_001.json")
+    phase9.add_argument(
+        "--phase8-specification", default="config/phase8_trial_001.json"
+    )
+    phase9.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    phase9.add_argument("--output-dir", default="artifacts/phase9_complete")
+    phase9.add_argument("--project-root", default=".")
+    phase9.set_defaults(func=_phase9)
+
+    verify9 = commands.add_parser("verify-phase9")
+    verify9.add_argument("--output-dir", default="artifacts/phase9_complete")
+    verify9.add_argument("--specification", default="config/phase9_trial_001.json")
+    verify9.add_argument(
+        "--phase8-specification", default="config/phase8_trial_001.json"
+    )
+    verify9.add_argument(
+        "--roster", default="config/phase6_campaign_roster_001.json"
+    )
+    verify9.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify9.add_argument("--project-root", default=".")
+    verify9.set_defaults(func=_verify_phase9)
+
+    phase10 = commands.add_parser("phase10-complete")
+    phase10.add_argument("--specification", default="config/phase10_trial_001.json")
+    phase10.add_argument("--events", default="config/phase10_synthetic_events.csv")
+    phase10.add_argument(
+        "--phase9-specification", default="config/phase9_trial_001.json"
+    )
+    phase10.add_argument("--output-dir", default="artifacts/phase10_complete")
+    phase10.add_argument("--project-root", default=".")
+    phase10.set_defaults(func=_phase10)
+
+    verify10 = commands.add_parser("verify-phase10")
+    verify10.add_argument("--output-dir", default="artifacts/phase10_complete")
+    verify10.add_argument("--specification", default="config/phase10_trial_001.json")
+    verify10.add_argument("--events", default="config/phase10_synthetic_events.csv")
+    verify10.add_argument(
+        "--phase9-specification", default="config/phase9_trial_001.json"
+    )
+    verify10.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify10.add_argument("--project-root", default=".")
+    verify10.set_defaults(func=_verify_phase10)
+
+    phase11 = commands.add_parser("phase11-complete")
+    phase11.add_argument("--specification", default="config/phase11_trial_001.json")
+    phase11.add_argument(
+        "--phase10-specification", default="config/phase10_trial_001.json"
+    )
+    phase11.add_argument(
+        "--labels", default="artifacts/phase10_complete/labeled_events.csv"
+    )
+    phase11.add_argument("--output-dir", default="artifacts/phase11_complete")
+    phase11.add_argument("--project-root", default=".")
+    phase11.set_defaults(func=_phase11)
+
+    verify11 = commands.add_parser("verify-phase11")
+    verify11.add_argument("--output-dir", default="artifacts/phase11_complete")
+    verify11.add_argument("--specification", default="config/phase11_trial_001.json")
+    verify11.add_argument(
+        "--phase10-specification", default="config/phase10_trial_001.json"
+    )
+    verify11.add_argument(
+        "--labels", default="artifacts/phase10_complete/labeled_events.csv"
+    )
+    verify11.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify11.add_argument("--project-root", default=".")
+    verify11.set_defaults(func=_verify_phase11)
+
+    phase12 = commands.add_parser("phase12-complete")
+    phase12.add_argument("--specification", default="config/phase12_trial_001.json")
+    phase12.add_argument(
+        "--phase11-specification", default="config/phase11_trial_001.json"
+    )
+    phase12.add_argument(
+        "--labels", default="artifacts/phase10_complete/labeled_events.csv"
+    )
+    phase12.add_argument("--model", default="artifacts/phase11_complete/model.json")
+    phase12.add_argument("--output-dir", default="artifacts/phase12_complete")
+    phase12.add_argument("--project-root", default=".")
+    phase12.set_defaults(func=_phase12)
+
+    verify12 = commands.add_parser("verify-phase12")
+    verify12.add_argument("--output-dir", default="artifacts/phase12_complete")
+    verify12.add_argument("--specification", default="config/phase12_trial_001.json")
+    verify12.add_argument(
+        "--phase11-specification", default="config/phase11_trial_001.json"
+    )
+    verify12.add_argument(
+        "--labels", default="artifacts/phase10_complete/labeled_events.csv"
+    )
+    verify12.add_argument("--model", default="artifacts/phase11_complete/model.json")
+    verify12.add_argument("--trial-registry", default="config/trial_registry.csv")
+    verify12.add_argument("--project-root", default=".")
+    verify12.set_defaults(func=_verify_phase12)
+
+    pit_labels = commands.add_parser("build-pit-labels")
+    pit_labels.add_argument("--specification", required=True)
+    pit_labels.add_argument("--features", required=True)
+    pit_labels.add_argument("--quotes", required=True)
+    pit_labels.add_argument("--evidence-ledger", required=True)
+    pit_labels.add_argument("--output-dir", required=True)
+    pit_labels.set_defaults(func=_build_pit_labels)
+
+    registered_backtest = commands.add_parser("registered-backtest")
+    registered_backtest.add_argument("--specification", required=True)
+    registered_backtest.add_argument("--labels", required=True)
+    registered_backtest.add_argument("--trial-registry", default="config/trial_registry.csv")
+    registered_backtest.add_argument("--output-dir", required=True)
+    registered_backtest.add_argument("--project-root", default=".")
+    registered_backtest.set_defaults(func=_registered_backtest)
+
+    forward_status = commands.add_parser("paper-forward-status")
+    forward_status.add_argument("--journal", default="data/raw/paper_forward/events.jsonl")
+    forward_status.set_defaults(func=_paper_forward_status)
+
+    forward_signal = commands.add_parser("paper-forward-signal")
+    forward_signal.add_argument("--journal", default="data/raw/paper_forward/events.jsonl")
+    forward_signal.add_argument("--model", required=True)
+    forward_signal.add_argument("--input", required=True)
+    forward_signal.add_argument(
+        "--evidence-ledger", default="data/raw/evidence_ledger"
+    )
+    forward_signal.add_argument("--clear-kill-switch", action="store_true")
+    forward_signal.add_argument("--specification", default="config/phase12_trial_001.json")
+    forward_signal.add_argument(
+        "--phase11-specification", default="config/phase11_trial_001.json"
+    )
+    forward_signal.set_defaults(func=_paper_forward_signal)
+
+    forward_settle = commands.add_parser("paper-forward-settle")
+    forward_settle.add_argument("--journal", default="data/raw/paper_forward/events.jsonl")
+    forward_settle.add_argument("--signal-id", required=True)
+    forward_settle.add_argument("--exit-bid", required=True, type=float)
+    forward_settle.add_argument("--exit-ask", required=True, type=float)
+    forward_settle.add_argument("--provenance", default="licensed_shadow")
+    forward_settle.set_defaults(func=_paper_forward_settle)
 
     authorize = commands.add_parser("authorize-campaign-access")
     authorize.add_argument("--source-event-id", required=True)

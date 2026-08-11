@@ -132,6 +132,22 @@ Phase 8は2026-08-11に
 [Phase 8 protocol](docs/PHASE8_PROTOCOL.md)、
 [capture authorization runbook](docs/CAPTURE_AUTHORIZATION_RUNBOOK.md)を参照してください。
 
+## Phase 9–12 status
+
+Phase 9〜12は2026-08-11に実装完了しました。Phase 9はhash-chain campaign state、Phase 10は
+PIT価格結合と動的コスト、Phase 11は5特徴・1 trialのexpanding walk-forward backtest、
+Phase 12はsignal／settlement分離型forward journalとpaper risk gateです。
+
+登録runは合成36イベントだけを使用し、backtest 24件とforward 12件を時間順に完全分離しました。
+walk-forwardの12 OOS予測は方向一致100%でもコスト後合計-6.38bp、DSR 0.0021であり、経済判断は
+**BACKTEST_IMPLEMENTED_EMPIRICAL_DATA_REQUIRED**です。forwardは12 signalを別eventでsettleする
+配管を確認しましたが、prospective実eventとlive orderは0件です。全205テストがPASSしました。
+
+実bid/ask tapeと登録済みevidence packageの結合、Git事前登録済みspecだけを受理してlabelを
+再検算するbacktest、kill switch既定ONのpaper forward CLIまで実装済みです。詳細は
+[backtest/forward runbook](docs/BACKTEST_FORWARD_RUNBOOK.md)、
+[Phase 11 result](docs/PHASE11_RESULT.md)、[Phase 12 result](docs/PHASE12_RESULT.md)を参照してください。
+
 ## Experiment 0
 
 発表直前の最後の気配を基準に、+1秒、+5秒、+30秒、+1分、+5分、+15分、
@@ -229,6 +245,22 @@ macro-lab phase8-complete
 # Phase 8: preregistration、失敗注入、全回帰試験を独立監査
 macro-lab verify-phase8
 
+# Phase 9: append-only campaign state machine
+macro-lab phase9-complete
+macro-lab verify-phase9
+
+# Phase 10: PIT labelと動的コスト
+macro-lab phase10-complete
+macro-lab verify-phase10
+
+# Phase 11: 登録済みwalk-forward backtest
+macro-lab phase11-complete
+macro-lab verify-phase11
+
+# Phase 12: paper forward signal／settlement journal
+macro-lab phase12-complete
+macro-lab verify-phase12
+
 # テスト
 python -m unittest discover -s tests -v
 ```
@@ -237,7 +269,9 @@ python -m unittest discover -s tests -v
 `artifacts/phase2_complete/`、`artifacts/phase3_complete/`、
 `artifacts/phase4_complete/`、`artifacts/phase5_complete/`、
 `artifacts/phase6_complete/`、`artifacts/phase7_complete/`、
-`artifacts/phase8_complete/` のCSV、JSON、
+`artifacts/phase8_complete/`、`artifacts/phase9_complete/`、
+`artifacts/phase10_complete/`、`artifacts/phase11_complete/`、
+`artifacts/phase12_complete/` のCSV、JSON、
 Markdown、SVGです。
 生データ・処理済み相場データ・生成物はGit管理外です。
 
